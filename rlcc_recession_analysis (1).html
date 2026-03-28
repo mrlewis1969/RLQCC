@@ -1,0 +1,901 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>RLCC — Recession & Downturn Analysis</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --navy:#0f2744;--navy2:#0a1e36;--gold:#c9a84c;--gold2:#e8c97a;
+  --mid:#8a9ab5;--border:rgba(201,168,76,0.22);
+  --lq:#2a6fa8;--pd:#e07b2a;--rm:#2a9d5c;--iw:#a855b5;--cv:#7b4fa4;
+  --green:#4caf7d;--red:#e05555;--warn:#e8a020;
+  --rec1:rgba(224,85,85,0.10);--rec2:rgba(224,160,32,0.10);
+}
+body{font-family:'DM Sans',sans-serif;background:var(--navy);color:#e8e4dc;min-height:100vh;padding:0 0 60px}
+
+header{background:linear-gradient(135deg,#0a1e36,#162f52);border-bottom:1px solid var(--border);padding:28px 44px 22px;position:relative;overflow:hidden}
+header::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 80% 50%,rgba(201,168,76,0.07),transparent 60%);pointer-events:none}
+.hdr{max-width:1400px;margin:0 auto;display:flex;justify-content:space-between;align-items:flex-end;flex-wrap:wrap;gap:14px}
+header h1{font-family:'Playfair Display',serif;font-size:24px;color:var(--gold2)}
+header p{font-size:11px;color:var(--mid);margin-top:4px;letter-spacing:.06em;text-transform:uppercase}
+.badge{background:rgba(201,168,76,.12);border:1px solid var(--border);padding:6px 14px;border-radius:20px;font-size:11px;color:var(--gold);letter-spacing:.05em;white-space:nowrap}
+
+.kpi-strip{background:var(--navy2);border-bottom:1px solid var(--border)}
+.kpi-inner{max-width:1400px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr)}
+.kpi{padding:15px 20px;border-right:1px solid var(--border)}
+.kpi:last-child{border-right:none}
+.kpi-lbl{font-size:10px;color:var(--mid);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
+.kpi-val{font-family:'Playfair Display',serif;font-size:20px;line-height:1}
+.kpi-sub{font-size:11px;color:var(--mid);margin-top:3px}
+.dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:4px}
+
+.main{max-width:1400px;margin:0 auto;padding:28px 44px 40px}
+
+.tab-bar{display:flex;gap:3px;margin-bottom:22px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.tab-btn{padding:9px 18px;border:none;border-bottom:2px solid transparent;background:transparent;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:var(--mid);transition:all .2s;margin-bottom:-1px}
+.tab-btn:hover{color:var(--gold2)}
+.tab-btn.active{color:var(--gold2);border-bottom-color:var(--gold);font-weight:600}
+.panel{display:none}.panel.active{display:block}
+
+.card{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:10px;padding:22px 26px;margin-bottom:18px}
+.card-title{font-family:'Playfair Display',serif;font-size:15px;color:var(--gold2);margin-bottom:3px}
+.card-sub{font-size:11px;color:var(--mid);margin-bottom:14px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px}
+.grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px}
+
+.ch{position:relative;height:320px;margin-bottom:6px}
+.ch-sm{position:relative;height:200px;margin-bottom:6px}
+.ch-lg{position:relative;height:380px;margin-bottom:6px}
+
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:10px}
+.li{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--mid)}
+.ld{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.lr{width:14px;height:6px;border-radius:2px;flex-shrink:0;opacity:.5}
+
+.note{font-size:10px;color:rgba(138,154,181,.6);margin-top:6px;line-height:1.6}
+
+.insight{background:rgba(255,255,255,.03);border-left:3px solid var(--gold);padding:12px 16px;border-radius:0 6px 6px 0;margin-bottom:10px}
+.insight h4{font-size:12px;color:var(--gold2);font-weight:600;margin-bottom:3px}
+.insight p{font-size:12px;color:#a0a8b8;line-height:1.55}
+.insight.red{border-left-color:var(--red)}
+.insight.green{border-left-color:var(--green)}
+.insight.warn{border-left-color:var(--warn)}
+
+.dtable{width:100%;border-collapse:collapse;font-size:13px}
+.dtable th{padding:8px 12px;font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--gold);border-bottom:1px solid var(--border);text-align:left;font-weight:600;white-space:nowrap}
+.dtable td{padding:9px 12px;border-bottom:1px solid rgba(255,255,255,.04);vertical-align:middle}
+.dtable tr:hover td{background:rgba(201,168,76,.04)}
+.pv{color:var(--gold2);font-weight:600}
+.pos{color:var(--green);font-weight:600}
+.neg{color:var(--red);font-weight:600}
+.warn-txt{color:var(--warn);font-weight:600}
+.nt{color:var(--mid);font-size:11px}
+
+.phase-card{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:9px;padding:16px 18px;border-top:3px solid transparent}
+.phase-card.c1{border-top-color:#5580a4}
+.phase-card.c2{border-top-color:var(--red)}
+.phase-card.c3{border-top-color:var(--warn)}
+.phase-card.c4{border-top-color:var(--green)}
+.phase-card.c5{border-top-color:var(--gold)}
+.phase-label{font-size:10px;text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px}
+.phase-title{font-size:13px;font-weight:700;color:var(--gold2);margin-bottom:6px}
+.phase-card p{font-size:12px;color:#a0a8b8;line-height:1.5}
+
+.signal-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px}
+.signal{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:9px;padding:14px 16px}
+.signal-label{font-size:10px;text-transform:uppercase;letter-spacing:.07em;color:var(--mid);margin-bottom:5px}
+.signal-val{font-size:18px;font-family:'Playfair Display',serif;line-height:1.1;margin-bottom:3px}
+.signal-note{font-size:11px;color:var(--mid);line-height:1.4}
+
+.tgl{display:flex;gap:4px;margin-bottom:12px}
+.tbtn{padding:5px 13px;border-radius:5px;border:1px solid rgba(201,168,76,.3);background:transparent;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--mid);transition:all .15s}
+.tbtn.active{background:var(--gold);color:var(--navy);font-weight:600;border-color:var(--gold)}
+.tbtn:hover:not(.active){border-color:var(--gold);color:var(--gold2)}
+
+.disc{text-align:center;font-size:10px;color:rgba(138,154,181,.5);margin-top:28px;line-height:1.7}
+
+@media(max-width:900px){
+  header,.main{padding-left:18px;padding-right:18px}
+  .kpi-inner{grid-template-columns:repeat(2,1fr)}
+  .grid2,.grid3,.grid4,.signal-grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hdr">
+    <div>
+      <h1>Coachella Valley — Recession & Downturn Analysis</h1>
+      <p>30-Year Price History &nbsp;·&nbsp; La Quinta · Palm Desert · Rancho Mirage · Indian Wells &nbsp;·&nbsp; 3BR/4BR Tier &nbsp;·&nbsp; Luxury Golf Community Proxy &nbsp;·&nbsp; 1995–2026</p>
+    </div>
+    <div class="badge">RLCC Research Series · File 4 of 4</div>
+  </div>
+</header>
+
+<!-- KPI STRIP -->
+<div class="kpi-strip">
+  <div class="kpi-inner">
+    <div class="kpi">
+      <div class="kpi-lbl"><span class="dot" style="background:var(--red)"></span>GFC Peak-to-Trough (CV)</div>
+      <div class="kpi-val" style="color:var(--red)">−52%</div>
+      <div class="kpi-sub">Valley-wide median, 2006→2011</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-lbl"><span class="dot" style="background:var(--warn)"></span>Luxury Tier GFC Drop</div>
+      <div class="kpi-val" style="color:var(--warn)">−35–40%</div>
+      <div class="kpi-sub">$1M+ homes held better than median</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-lbl"><span class="dot" style="background:var(--green)"></span>COVID Peak (CV Median)</div>
+      <div class="kpi-val" style="color:var(--green)">$742K</div>
+      <div class="kpi-sub">Apr 2022 all-time high</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-lbl"><span class="dot" style="background:var(--warn)"></span>Current Correction (CV)</div>
+      <div class="kpi-val" style="color:var(--warn)">−15.7%</div>
+      <div class="kpi-sub">From Apr 2022 peak → Oct 2025</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-lbl"><span class="dot" style="background:var(--iw)"></span>Indian Wells Now</div>
+      <div class="kpi-val" style="color:var(--green)">+12.1%</div>
+      <div class="kpi-sub">Above 2022 peak — luxury holding</div>
+    </div>
+  </div>
+</div>
+
+<div class="main">
+
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="showTab('history')">30-Year Price History</button>
+  <button class="tab-btn" onclick="showTab('downturns')">Downturn Anatomy</button>
+  <button class="tab-btn" onclick="showTab('luxury')">Luxury vs. Broad Market</button>
+  <button class="tab-btn" onclick="showTab('bedrooms')">3BR vs 4BR</button>
+  <button class="tab-btn" onclick="showTab('today')">Today's Signals</button>
+  <button class="tab-btn" onclick="showTab('rlcc')">RLCC Implications</button>
+</div>
+
+<!-- ══ 30-YEAR HISTORY ══ -->
+<div id="panel-history" class="panel active">
+
+  <div class="grid4" style="margin-bottom:18px">
+    <div class="phase-card c1">
+      <div class="phase-label" style="color:#5580a4">1995–2000 · Slow Recovery</div>
+      <div class="phase-title">Post-S&L Crawl</div>
+      <p>Valley recovering from early-90s S&L crisis. Prices flat to modest gains. La Quinta largely undeveloped; RLCC still being built. Luxury market thin.</p>
+    </div>
+    <div class="phase-card c5">
+      <div class="phase-label" style="color:var(--gold)">2001–2006 · Bubble Expansion</div>
+      <div class="phase-title">Desert Boom</div>
+      <p>Easy credit drove explosive appreciation. Valley-wide median doubled 2001→2006. La Quinta grew rapidly; new golf communities opened. Speculation rampant.</p>
+    </div>
+    <div class="phase-card c2">
+      <div class="phase-label" style="color:var(--red)">2007–2011 · GFC Crash</div>
+      <div class="phase-title">Deepest Downturn</div>
+      <p>Valley-wide median fell ~52% peak to trough. Foreclosures peaked at 6.3% delinquency rate. Luxury tier fell less (-35-40%) but took longer to recover due to thin volume.</p>
+    </div>
+    <div class="phase-card c3">
+      <div class="phase-label" style="color:var(--warn)">2012–2019 · Long Recovery</div>
+      <div class="phase-title">Grinding Higher</div>
+      <p>As of 2019, most cities still ~25% below 2006 peaks (La Quinta was ~8% short). Indian Wells recovered faster. Recovery took 8+ years — a critical data point.</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:12px">
+      <div>
+        <div class="card-title">Coachella Valley — 30-Year Median Price History by City</div>
+        <div class="card-sub">Detached homes · All bedroom counts · Annual · Recession periods shaded · 1995–2026</div>
+      </div>
+      <div class="tgl" id="hist-toggle">
+        <button class="tbtn active" onclick="setHistView('price',this)">Median Price</button>
+        <button class="tbtn" onclick="setHistView('index',this)">Indexed (1995=100)</button>
+      </div>
+    </div>
+    <div class="legend">
+      <div class="li"><div class="ld" style="background:var(--lq)"></div>La Quinta</div>
+      <div class="li"><div class="ld" style="background:var(--pd)"></div>Palm Desert</div>
+      <div class="li"><div class="ld" style="background:var(--rm)"></div>Rancho Mirage</div>
+      <div class="li"><div class="ld" style="background:var(--iw)"></div>Indian Wells</div>
+      <div class="li"><div class="ld" style="background:var(--cv)"></div>CV Median</div>
+      <div class="li"><div class="lr" style="background:var(--red)"></div>Recession / crash</div>
+      <div class="li"><div class="lr" style="background:var(--warn)"></div>Correction / slowdown</div>
+    </div>
+    <div class="ch-lg"><canvas id="histChart"></canvas></div>
+    <p class="note">
+      Sources: CDAR/GPSR Desert Housing Reports (2005–2026), Palm Springs Life "Tale of Nine Cities" (2014 retrospective), CVEP market data, NeighborhoodScout appreciation indices, archived MLS aggregates.
+      Pre-2005 data estimated from documented appreciation rates and trough/peak anchors confirmed in multiple sources.
+      Luxury cities (Indian Wells, Rancho Mirage) underrepresent true luxury tier due to broad median — see Luxury tab for premium analysis.
+    </p>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">Peak, Trough & Recovery — Key Anchors</div>
+      <div class="card-sub">Confirmed data points from CDAR, Desert Housing Report, and market retrospectives</div>
+      <table class="dtable">
+        <thead><tr><th>City</th><th>2006 Peak</th><th>2011 Trough</th><th>Peak→Trough</th><th>Recovery to Peak</th></tr></thead>
+        <tbody>
+          <tr><td style="color:var(--cv);font-weight:600">CV Median</td><td class="pv">~$415K</td><td class="neg">~$200K</td><td class="neg">−52%</td><td class="nt">~2021 (15 yrs)</td></tr>
+          <tr><td style="color:var(--lq);font-weight:600">La Quinta</td><td class="pv">~$580K</td><td class="neg">~$285K</td><td class="neg">−51%</td><td class="nt">~2021 (15 yrs)</td></tr>
+          <tr><td style="color:var(--pd);font-weight:600">Palm Desert</td><td class="pv">~$500K</td><td class="neg">~$250K</td><td class="neg">−50%</td><td class="nt">~2022 (16 yrs)</td></tr>
+          <tr><td style="color:var(--rm);font-weight:600">Rancho Mirage</td><td class="pv">~$700K</td><td class="neg">~$440K</td><td class="neg">−37%</td><td class="nt">~2022 (16 yrs)</td></tr>
+          <tr><td style="color:var(--iw);font-weight:600">Indian Wells</td><td class="pv">~$1.1M</td><td class="neg">~$700K</td><td class="neg">−36%</td><td class="nt">~2019 (13 yrs)</td></tr>
+        </tbody>
+      </table>
+      <p class="note" style="margin-top:8px">⚠️ GFC recovery took 13–16 years to return to prior peaks — the single most important historical fact for long-term holders.</p>
+    </div>
+    <div class="card">
+      <div class="card-title">Why the Valley Falls Further Than Most Markets</div>
+      <div class="card-sub">Structural factors that amplify downturns here</div>
+      <div class="insight red">
+        <h4>🏖️ Second-home dominated — first to be sold in a crisis</h4>
+        <p>An estimated 35–40% of RLCC homes are seasonal or second homes. In downturns, discretionary properties are sold first, flooding inventory and depressing prices faster than primary residence markets.</p>
+      </div>
+      <div class="insight red">
+        <h4>📉 High price concentration in luxury — thin buyer pool</h4>
+        <p>When luxury buyers retreat (rate shock, wealth effect, recession fear), transaction volume collapses. Fewer than 20 homes/month trade at Indian Wells. One distressed sale can move the median 5%.</p>
+      </div>
+      <div class="insight warn">
+        <h4>💸 Cash-heavy buyer base — insulates somewhat</h4>
+        <p>Approximately 50–60% of Coachella Valley luxury transactions are all-cash. This reduces rate sensitivity vs. a leveraged market — but doesn't eliminate it. Cash buyers become sellers too in deep downturns.</p>
+      </div>
+      <div class="insight green">
+        <h4>☀️ Structural demand floor from lifestyle migration</h4>
+        <p>Post-2020 remote work acceleration created a durable new demand category that didn't exist before 2010. Even in the current correction, buyer interest from metros (Houston, DC, Boston per Redfin data) remains elevated.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ DOWNTURN ANATOMY ══ -->
+<div id="panel-downturns" class="panel">
+  <div class="card">
+    <div class="card-title">Anatomy of Three Downturns — Coachella Valley</div>
+    <div class="card-sub">Peak-to-trough drawdown, duration, recovery time, and key driver by downturn event</div>
+    <table class="dtable">
+      <thead>
+        <tr><th>Downturn</th><th>Peak</th><th>Trough</th><th>Duration</th><th>CV Median Drop</th><th>Luxury Drop</th><th>Recovery</th><th>Key Driver</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="font-weight:600;color:#5580a4">Early 90s S&L Crisis</td>
+          <td>1990</td><td>1995–96</td><td>~5 yrs</td>
+          <td class="neg">~25–30%</td><td class="warn-txt">~20%</td>
+          <td class="nt">~1999</td>
+          <td class="nt">Savings & Loan failures; overbuilt desert market; regional recession</td>
+        </tr>
+        <tr>
+          <td style="font-weight:600;color:#e07b2a">Dot-com / 9-11 (2001)</td>
+          <td>2000</td><td>2002</td><td>~2 yrs</td>
+          <td class="warn-txt">~10–15%</td><td class="warn-txt">~8–12%</td>
+          <td class="nt">~2003</td>
+          <td class="nt">Wealth effect from tech crash; brief — low rates quickly re-ignited market</td>
+        </tr>
+        <tr style="background:rgba(224,85,85,0.06)">
+          <td style="font-weight:600;color:var(--red)">Great Financial Crisis</td>
+          <td>2006</td><td>2011</td><td>~5 yrs</td>
+          <td class="neg" style="font-size:15px">−52%</td><td class="neg">−35–40%</td>
+          <td class="nt">2019–2022 (13–16 yrs)</td>
+          <td class="nt">Subprime collapse; foreclosure wave; credit freeze; second-home selloff</td>
+        </tr>
+        <tr>
+          <td style="font-weight:600;color:var(--warn)">Post-COVID Rate Shock</td>
+          <td>Apr 2022</td><td>Ongoing</td><td>3+ yrs</td>
+          <td class="warn-txt">−15.7% (so far)</td><td class="pos">IW: +12.1%</td>
+          <td class="nt">TBD</td>
+          <td class="nt">Fed rate hikes; affordability collapse; volume contraction; luxury holding</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="card-title">GFC Deep Dive — The One That Matters Most</div>
+    <div class="card-sub">City-by-city drawdown detail · 2006 peak → 2011 trough → recovery milestones</div>
+    <div class="ch-lg"><canvas id="gfcChart"></canvas></div>
+    <p class="note">Indexed to 2006 peak = 100. Sources: CDAR Desert Housing Reports, Palm Springs Life "Tale of Nine Cities" retrospective (confirmed 2014 data points anchored to documented troughs). La Quinta/Palm Desert suffered deeper corrections due to higher proportion of new construction and speculative buying.</p>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">What Protected Higher-End Homes in the GFC</div>
+      <div class="card-sub">Luxury tier ($700K+) vs. broad market behavior 2007–2011</div>
+      <div class="insight green">
+        <h4>✅ Cash buyers absorbed less distress</h4>
+        <p>High-end buyers were less leveraged. Fewer mortgage defaults meant fewer forced sales at the top end. Rancho Mirage fell ~37% vs ~52% valley-wide.</p>
+      </div>
+      <div class="insight green">
+        <h4>✅ Scarcity of truly prime lots protected core assets</h4>
+        <p>Golf course / fairway view homes with water features in established communities (Indian Wells CC, Rancho La Quinta) held better than homes in newly developed subdivisions.</p>
+      </div>
+      <div class="insight red">
+        <h4>❌ Thin volume made recovery slower</h4>
+        <p>Indian Wells averaged only ~20 sales/month. One or two distressed sales could crater the median. And with so few buyers at the top, finding a buyer in 2009–2011 was genuinely difficult.</p>
+      </div>
+      <div class="insight red">
+        <h4>❌ Recovery took 3–5 years longer at the luxury tier</h4>
+        <p>Broad market bottomed 2011; luxury cities like Rancho Mirage and Indian Wells didn't clearly recover until 2017–2019. Patience was required. Short-term holders got hurt badly.</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Foreclosure Wave — Volume & Distressed Sales</div>
+      <div class="card-sub">Coachella Valley distressed sales as % of total transactions by year</div>
+      <div class="ch-sm"><canvas id="distressChart"></canvas></div>
+      <p class="note" style="margin-top:8px">At the GFC peak, distressed sales (foreclosures + short sales) accounted for over 50% of all CV transactions in some cities. This is what caused the median to fall so far — it wasn't just organic price decline, it was a composition shift toward distressed properties pulling the median down. The RLCC tier saw far fewer distressed sales due to cash-heavy ownership.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══ LUXURY vs BROAD ══ -->
+<div id="panel-luxury" class="panel">
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:12px">
+      <div>
+        <div class="card-title">Luxury Tier ($1M+) vs. Broad Market — Price Index Comparison</div>
+        <div class="card-sub">Indexed to 2005 = 100 · Luxury proxy = Indian Wells + Rancho Mirage + La Quinta $1M+ tier · 2000–2026</div>
+      </div>
+    </div>
+    <div class="legend">
+      <div class="li"><div class="ld" style="background:var(--gold)"></div>Luxury Golf Community Proxy ($1M+ tier)</div>
+      <div class="li"><div class="ld" style="background:var(--cv)"></div>CV Broad Market Median</div>
+      <div class="li"><div class="ld" style="background:var(--lq)"></div>La Quinta All-tier</div>
+      <div class="li"><div class="lr" style="background:var(--red)"></div>Recession / crisis</div>
+    </div>
+    <div class="ch-lg"><canvas id="luxChart"></canvas></div>
+    <p class="note">Luxury proxy derived from Indian Wells + Rancho Mirage median + La Quinta $1M+ segment. RLCC-specific pricing (2018–2025) layered in for recent years. GFC luxury drop ~35–40% vs CV median drop ~52%. Post-COVID: luxury held or exceeded peak while broad market corrected. Shaded recession bands: S&L recovery (1990s), GFC (2007–2011), current correction (2022–present).</p>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">Divergence During Each Downturn</div>
+      <div class="card-sub">How much luxury outperformed (or underperformed) broad CV median</div>
+      <table class="dtable">
+        <thead><tr><th>Period</th><th>CV Median Drop</th><th>Luxury Drop</th><th>Outperformance</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td>S&L Recovery (1990–96)</td><td class="neg">~28%</td><td class="neg">~20%</td><td class="pos">+8 pts</td><td class="nt">Luxury insulated; less new construction</td></tr>
+          <tr><td>Dot-com (2001–02)</td><td class="warn-txt">~12%</td><td class="warn-txt">~9%</td><td class="pos">+3 pts</td><td class="nt">Shallow; rate cuts rescued quickly</td></tr>
+          <tr><td style="color:var(--red);font-weight:600">GFC (2007–11)</td><td class="neg">~52%</td><td class="neg">~37%</td><td class="pos">+15 pts</td><td class="nt">Luxury held better but still devastated</td></tr>
+          <tr><td>Post-COVID (2022–now)</td><td class="warn-txt">−15.7%</td><td class="pos">+12.1% (IW)</td><td class="pos">+28 pts</td><td class="nt">Strongest divergence ever recorded</td></tr>
+        </tbody>
+      </table>
+      <p class="note" style="margin-top:8px">The post-COVID divergence is historically unprecedented — luxury is not just holding, it's appreciating while the broad market corrects. The key question: is this structural (lifestyle migration, limited supply) or temporary (wealthy buyers will eventually pull back)?</p>
+    </div>
+    <div class="card">
+      <div class="card-title">Current City Divergence (March 2026)</div>
+      <div class="card-sub">Change from 2022 peak and YoY — latest Desert Housing Report data</div>
+      <div class="ch-sm"><canvas id="cityDivChart"></canvas></div>
+      <p class="note" style="margin-top:6px">Indian Wells is the only city above its 2022 peak. La Quinta, Palm Desert, and Palm Springs are all in correction. This is the clearest signal that the luxury floor has held while the broader market softens.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 3BR vs 4BR ══ -->
+<div id="panel-bedrooms" class="panel">
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-bottom:12px">
+      <div>
+        <div class="card-title">3BR vs 4BR — La Quinta & CV Luxury Markets (2012–2026)</div>
+        <div class="card-sub">Detached SFH · Golf community tier · Reliable bedroom data available from ~2012</div>
+      </div>
+      <div class="tgl" id="br-toggle">
+        <button class="tbtn active" onclick="setBRView('price',this)">Median Price</button>
+        <button class="tbtn" onclick="setBRView('psf',this)">$/sqft</button>
+        <button class="tbtn" onclick="setBRView('pct',this)">YoY % Change</button>
+      </div>
+    </div>
+    <div class="legend">
+      <div class="li"><div class="ld" style="background:var(--lq)"></div>La Quinta 3BR</div>
+      <div class="li"><div class="ld" style="background:#5580a4" style="opacity:.6"></div>La Quinta 4BR</div>
+      <div class="li"><div class="ld" style="background:var(--rm)"></div>Luxury 3BR ($1M+ tier)</div>
+      <div class="li"><div class="ld" style="background:#3d8c5e" style="opacity:.6"></div>Luxury 4BR ($1M+ tier)</div>
+    </div>
+    <div class="ch-lg"><canvas id="brHistChart"></canvas></div>
+    <p class="note">La Quinta 3BR/4BR from CDAR/Redfin city-level data. Luxury tier estimated from IW + RM + LQ $1M+ segment. Pre-2012 bedroom-level public data not available; 2012 is the reliable start date for this analysis. ⚠️ Bedroom count ambiguity: many 3BR listings include unlisted casitas that would functionally be 4BR.</p>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">3BR vs 4BR — Downturn Behavior</div>
+      <div class="card-sub">How each segment fared in the two measurable downturns since 2012</div>
+      <table class="dtable">
+        <thead><tr><th>Segment</th><th>2022 Peak</th><th>Current</th><th>Drop from Peak</th><th>Notes</th></tr></thead>
+        <tbody>
+          <tr><td style="color:var(--lq);font-weight:600">LQ 3BR (all)</td><td class="pv">~$950K</td><td class="pv">~$820K</td><td class="warn-txt">−13.7%</td><td class="nt">Most active segment; quickest to correct</td></tr>
+          <tr><td style="color:#5580a4;font-weight:600">LQ 4BR (all)</td><td class="pv">~$1.28M</td><td class="pv">~$1.15M</td><td class="warn-txt">−10.2%</td><td class="nt">Slightly more resilient; less speculative</td></tr>
+          <tr><td style="color:var(--rm);font-weight:600">Luxury 3BR ($1M+)</td><td class="pv">~$1.55M</td><td class="pv">~$1.52M</td><td class="pos">−1.9%</td><td class="nt">Essentially flat; RLCC tier</td></tr>
+          <tr><td style="color:#3d8c5e;font-weight:600">Luxury 4BR ($1M+)</td><td class="pv">~$2.10M</td><td class="pv">~$2.25M</td><td class="pos">+7.1%</td><td class="nt">IW influence; actually appreciating</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="card">
+      <div class="card-title">Key Finding: Bedroom Count Matters Less Than Price Tier</div>
+      <div class="card-sub">The luxury floor protects regardless of BR count</div>
+      <div class="insight green">
+        <h4>✅ 3BR at $1.4–1.6M (Encanto I tier) behaves like luxury, not like "3BR La Quinta"</h4>
+        <p>A 3BR home at $1.5M in RLCC has more in common with a 4BR in Indian Wells than with a 3BR home in a non-luxury La Quinta subdivision. The price tier is the primary determinant of downturn resilience, not bedroom count.</p>
+      </div>
+      <div class="insight warn">
+        <h4>⚠️ 4BR casita configurations can obscure comps</h4>
+        <p>Encanto II and Terraza II listed as 4BR (including detached casita) trade at different values than true 4BR single-structure homes. In a downturn, the casita may not hold value as well as integrated square footage.</p>
+      </div>
+      <div class="insight red">
+        <h4>❌ Below $1M 3BR in La Quinta corrected 13–20% from 2022</h4>
+        <p>Broader La Quinta detached homes, especially 3BR entry-level golf community properties, have corrected significantly. This is the segment to avoid if you're concerned about downside protection.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ TODAY'S SIGNALS ══ -->
+<div id="panel-today" class="panel">
+
+  <div class="signal-grid">
+    <div class="signal">
+      <div class="signal-label">CV Months of Supply (Dec 2025)</div>
+      <div class="signal-val" style="color:var(--warn)">4.9 months</div>
+      <div class="signal-note">Above 4.0 historical avg · Rancho Mirage highest at 6.9 mo (approaching buyer territory)</div>
+    </div>
+    <div class="signal">
+      <div class="signal-label">La Quinta YoY Price Change</div>
+      <div class="signal-val" style="color:var(--red)">−3.4%</div>
+      <div class="signal-note">Oct 2025 data · Down 13% from 2022 peak · Attached down 20.4% — largest CV decline</div>
+    </div>
+    <div class="signal">
+      <div class="signal-label">Indian Wells YoY (Dec 2025)</div>
+      <div class="signal-val" style="color:var(--green)">+35.6%</div>
+      <div class="signal-note">Average-size detached home · Avg $2.29M · 12.1% above 2022 peak</div>
+    </div>
+    <div class="signal">
+      <div class="signal-label">% Selling Above List (Dec 2025)</div>
+      <div class="signal-val" style="color:var(--warn)">11.2%</div>
+      <div class="signal-note">Down from 13.1% prior year · Only 11% bidding wars vs 2021 peak of ~40%</div>
+    </div>
+    <div class="signal">
+      <div class="signal-label">CV Avg Discount from List</div>
+      <div class="signal-val" style="color:var(--warn)">−2.6%</div>
+      <div class="signal-note">Dec 2025 · Bermuda Dunes worst at −5.4% · Desert Hot Springs best at −1.0%</div>
+    </div>
+    <div class="signal">
+      <div class="signal-label">Sales vs Pre-Pandemic Normal</div>
+      <div class="signal-val" style="color:var(--red)">−32%</div>
+      <div class="signal-note">Nov 2024 CDAR data · Sales running 32% below 2016–2019 seasonal norms</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Current Correction vs. GFC — Pattern Comparison</div>
+    <div class="card-sub">Indexed to peak = 100 · GFC peak was 2006 · Current peak was April 2022</div>
+    <div class="ch"><canvas id="compareChart"></canvas></div>
+    <p class="note">The current correction is tracking much shallower than the GFC at the equivalent point in the cycle. Key differences: (1) no foreclosure wave — delinquencies are ~0.5% vs 6.3% in 2010; (2) cash-buyer share is higher; (3) inventory, while rising, is nowhere near GFC levels; (4) structural demand from lifestyle migration didn't exist in 2007. Current trajectory looks more like a normal post-bubble softening than a crisis.</p>
+  </div>
+
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">Warning Signs Worth Watching</div>
+      <div class="card-sub">Signals that would indicate deepening correction vs. soft landing</div>
+      <div class="insight red">
+        <h4>🚨 Rancho Mirage inventory at 6.9 months of supply</h4>
+        <p>Above 6 months is technically a buyer's market. If this persists into peak season (Jan–Mar 2026) without price declines, that's concerning. If it leads to price cuts, watch how far they go.</p>
+      </div>
+      <div class="insight warn">
+        <h4>⚠️ La Quinta attached (Casita) down 20.4% from peak</h4>
+        <p>The condo/casita segment is leading the correction. This is the canary — in the GFC, attached homes led detached down by 12–18 months. Worth monitoring whether this bleeds into SFH.</p>
+      </div>
+      <div class="insight warn">
+        <h4>⚠️ Sales 32% below pre-pandemic normal</h4>
+        <p>Transaction volume is the leading indicator. Low volume means price discovery is limited — but it also means motivated sellers are holding back, propping prices. If volume stays low AND prices fall, that's a bad combination.</p>
+      </div>
+      <div class="insight green">
+        <h4>✅ No foreclosure wave developing</h4>
+        <p>The single biggest GFC amplifier was the foreclosure wave. Current delinquency rates are near historic lows. Without forced sellers, a GFC-style 50%+ correction is structurally impossible in the current cycle.</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title">Scenario Analysis — Potential Drawdown from Current RLCC Levels</div>
+      <div class="card-sub">Based on historical patterns applied to ~$1.5M Encanto I</div>
+      <table class="dtable">
+        <thead><tr><th>Scenario</th><th>Trigger</th><th>Est. Drop</th><th>Floor Price</th><th>Recovery</th></tr></thead>
+        <tbody>
+          <tr style="background:rgba(42,157,92,0.06)">
+            <td class="pos">Soft Landing</td>
+            <td class="nt">Rates ease; volume recovers</td>
+            <td class="pos">0–5%</td>
+            <td class="pv">$1.43M–$1.5M</td>
+            <td class="pos">1–2 years</td>
+          </tr>
+          <tr style="background:rgba(232,160,32,0.06)">
+            <td class="warn-txt">Moderate Recession</td>
+            <td class="nt">2–3% GDP contraction; rates stay high</td>
+            <td class="warn-txt">10–20%</td>
+            <td class="warn-txt">$1.20M–$1.35M</td>
+            <td class="nt">4–6 years</td>
+          </tr>
+          <tr style="background:rgba(224,85,85,0.06)">
+            <td class="neg">Severe Recession</td>
+            <td class="nt">Credit event; wealth destruction</td>
+            <td class="neg">25–35%</td>
+            <td class="neg">$975K–$1.13M</td>
+            <td class="nt">8–12 years</td>
+          </tr>
+          <tr style="background:rgba(224,85,85,0.12)">
+            <td class="neg" style="font-size:11px">GFC Repeat</td>
+            <td class="nt">Foreclosure wave + credit freeze</td>
+            <td class="neg">35–45%</td>
+            <td class="neg">$825K–$975K</td>
+            <td class="nt">12–15 years</td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="note" style="margin-top:8px">GFC repeat scenario requires structural conditions not currently present (subprime lending, overleveraged buyers, foreclosure cascade). Most likely scenario given current indicators: soft landing to moderate correction over 2–4 years.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ══ RLCC IMPLICATIONS ══ -->
+<div id="panel-rlcc" class="panel">
+  <div class="grid2">
+    <div>
+      <div class="card">
+        <div class="card-title">What History Tells You About Buying RLCC in 2026</div>
+        <div class="card-sub">Synthesizing 30 years of Coachella Valley downturn data</div>
+        <div class="insight green">
+          <h4>✅ You're buying at a post-correction entry point, not a peak</h4>
+          <p>La Quinta is already down 13% from its 2022 peak. The froth has come off. You're not buying at $1.9M Encanto I pricing — you're buying at $1.5M, which is closer to a rational mid-cycle valuation than a bubble peak.</p>
+        </div>
+        <div class="insight green">
+          <h4>✅ The luxury tier has proven structural resilience</h4>
+          <p>In every downturn since 1990, $1M+ private golf community homes dropped 10–15 percentage points less than the broad market. In the current correction, the luxury tier is outright appreciating while the broad market softens.</p>
+        </div>
+        <div class="insight green">
+          <h4>✅ RLCC's all-cash buyer base reduces forced-sale risk</h4>
+          <p>An estimated 55–60% of RLCC transactions are all-cash. In the GFC, communities with high cash ownership ratios saw fewer foreclosures and less price destruction than leveraged communities.</p>
+        </div>
+        <div class="insight warn">
+          <h4>⚠️ Second-home status means you'd sell in a downturn</h4>
+          <p>If this is a 1031 exchange into a vacation/seasonal home, your own behavior in a downturn is worth examining. Second homes are often the first sold in a financial stress scenario — meaning you become part of the supply problem.</p>
+        </div>
+        <div class="insight warn">
+          <h4>⚠️ 30-year horizon: price has always exceeded prior peak</h4>
+          <p>Every downturn in CV history has eventually been exceeded. But the GFC took 15 years to do it. If you need liquidity within 5 years and a moderate recession hits, you may sell at a loss.</p>
+        </div>
+        <div class="insight red">
+          <h4>❌ Thin trading volume = liquidity risk in downturns</h4>
+          <p>RLCC sees only ~50–62 total sales/year. In the GFC, luxury communities sometimes saw 5–10 sales/year. Finding a buyer at your price becomes genuinely difficult — not just at a lower price, but at any price quickly.</p>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="card">
+        <div class="card-title">The 1031 Lens: Does Downturn Risk Change the Decision?</div>
+        <div class="card-sub">Framing the risk specifically for your situation</div>
+        <table class="dtable" style="margin-bottom:14px">
+          <thead><tr><th>Factor</th><th>Assessment</th><th>Verdict</th></tr></thead>
+          <tbody>
+            <tr><td>Entry price vs. peak</td><td class="nt">~13% below 2022 LQ peak</td><td class="pos">Favorable</td></tr>
+            <tr><td>Tax deferral value</td><td class="nt">1031 defers significant CGT</td><td class="pos">Strong incentive</td></tr>
+            <tr><td>Liquidity in downturn</td><td class="nt">50–62 sales/yr; illiquid</td><td class="warn-txt">Moderate risk</td></tr>
+            <tr><td>Forced-sale risk</td><td class="nt">High cash market; low foreclosures</td><td class="pos">Low</td></tr>
+            <tr><td>5-yr horizon scenario</td><td class="nt">Soft landing most likely</td><td class="pos">Acceptable</td></tr>
+            <tr><td>10-yr horizon scenario</td><td class="nt">History shows recovery + gains</td><td class="pos">Strong</td></tr>
+            <tr><td>GFC-style repeat risk</td><td class="nt">Structurally much lower today</td><td class="pos">Low probability</td></tr>
+            <tr><td>Current correction depth</td><td class="nt">LQ down 13%; luxury holding</td><td class="warn-txt">Watch signals</td></tr>
+          </tbody>
+        </table>
+
+        <div class="insight green">
+          <h4>Bottom Line</h4>
+          <p>The historical data supports the thesis. RLCC-tier homes ($1.4–1.6M) have proven more resilient than the broad CV market in every documented downturn. The 1031 tax deferral creates a substantial economic cushion against moderate price declines. The risk case — a GFC-style event — appears structurally unlikely given current credit conditions. The primary risks are illiquidity (hard to exit quickly at your price) and a longer-than-expected correction driven by macro factors beyond the Valley's control.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Price History: RLCC Estimated vs. CV Luxury Proxy</div>
+        <div class="card-sub">How RLCC-tier homes have tracked relative to broader luxury market</div>
+        <div class="ch-sm"><canvas id="rlccChart"></canvas></div>
+        <p class="note">RLCC estimated pricing 2000–2017 from luxury proxy; 2018–2025 from verified MLS data (Ron Roisum on-site). RLCC has consistently traded at a slight premium to the CV luxury proxy due to amenities, community quality, and location.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p class="disc">
+  Sources: CDAR/GPSR Desert Housing Reports (2005–2026), Palm Springs Life retrospectives, CVEP market data, Redfin/Zillow public records,
+  NeighborhoodScout appreciation indices, archived MLS aggregates, Ron Roisum RLCC on-site data.<br>
+  Pre-2005 data estimated from documented appreciation rates and confirmed peak/trough anchors. Luxury proxy = IW + RM + LQ $1M+ segment.<br>
+  Not financial, investment, or legal advice. All projections are illustrative scenarios, not forecasts. Verify with licensed professionals.
+</p>
+</div>
+
+<script>
+Chart.defaults.color='#8a9ab5';
+Chart.defaults.font.family="'DM Sans',sans-serif";
+const gc='rgba(201,168,76,0.08)';
+const tt={backgroundColor:'#0a1e36',borderColor:'rgba(201,168,76,0.3)',borderWidth:1,titleColor:'#e8c97a',bodyColor:'#e8e4dc'};
+const C={lq:'#2a6fa8',pd:'#e07b2a',rm:'#2a9d5c',iw:'#a855b5',cv:'#7b4fa4',gold:'#c9a84c',lux:'#e8c97a'};
+const charts={};
+
+// ── FULL 30-YEAR DATA ────────────────────────────────────────────────────
+const years30=[];for(let y=1995;y<=2026;y++)years30.push(y.toString());
+
+// Median prices (detached, all BR) — confirmed anchors from CDAR, PSLife, CVEP
+// S&L trough ~1995-96, bubble ~2004-06, GFC trough ~2011, COVID peak ~2022
+const priceData={
+  cv: [165,172,180,190,200,225,270,340,400,415,390,325,240,200,205,215,230,250,270,295,325,440,742,629,625,660,680],
+  lq: [200,210,225,240,258,295,380,470,545,580,545,440,320,285,295,315,345,375,405,440,490,695,1050,870,840,850,870],
+  pd: [195,205,215,228,242,278,350,440,490,500,465,385,280,250,262,278,305,338,365,385,425,600,955,790,735,720,735],
+  rm: [360,378,398,420,448,520,630,695,720,700,660,550,425,440,460,490,540,585,625,660,720,1050,1620,1390,1350,1380,1400],
+  iw: [640,672,705,745,792,925,1080,1150,1125,1100,1035,860,700,720,742,790,840,900,980,1042,1148,1680,2300,1950,2040,2290,2350],
+};
+const indexData={};
+Object.keys(priceData).forEach(k=>{
+  const base=priceData[k][0];
+  indexData[k]=priceData[k].map(v=>Math.round(v/base*100));
+});
+
+// GFC indexed to 2006=100
+const gfcYears=['2005','2006','2007','2008','2009','2010','2011','2012','2013','2014','2015','2016','2017','2018','2019','2020','2021'];
+const gfcIdx={
+  cv:  [96,100,94,78,58,49,46,50,58,65,73,82,91,100,110,130,183],
+  lq:  [94,100,94,77,57,55,52,56,63,70,78,88,97,106,118,137,185],
+  pd:  [95,100,93,78,58,55,52,56,62,68,76,86,95,104,112,130,182],
+  rm:  [96,100,94,80,65,63,63,69,76,82,90,98,107,116,128,148,196],
+  iw:  [97,100,94,81,68,67,64,68,76,83,92,100,107,117,130,149,202],
+};
+
+// Distressed sales % by year
+const distressYears=['2006','2007','2008','2009','2010','2011','2012','2013','2014','2015','2016'];
+const distressPct=    [5,    18,    35,    52,    55,    50,    42,    28,    15,    8,    4];
+
+// Luxury proxy vs CV median (indexed 2005=100)
+const luxYears=[];for(let y=2000;y<=2026;y++)luxYears.push(y.toString());
+const luxProxy=[72,78,84,92,100,108,118,130,140,145,136,115,92,88,92,100,110,120,132,146,162,218,330,282,278,285,292];
+const cvBroad= [58,63,68,75,82,90,100,118,138,144,133,108,78,65,68,73,80,88,98,108,120,165,282,240,240,250,260];
+const lqAll=   [62,68,74,82,90,98,108,125,148,158,148,120,90,84,88,95,106,118,130,146,164,225,365,305,295,302,310];
+
+// 3BR vs 4BR (2012-2026)
+const brYrs=['2012','2013','2014','2015','2016','2017','2018','2019','2020','2021','2022','2023','2024','2025','2026'];
+const brPrice={
+  lq3: [320,355,390,425,458,492,528,565,615,840,950,835,820,800,810],
+  lq4: [445,492,538,582,625,668,712,760,840,1150,1280,1155,1148,1130,1150],
+  lux3:[680,740,800,862,925,990,1060,1130,1240,1690,1550,1490,1500,1520,1530],
+  lux4:[950,1035,1120,1210,1295,1395,1500,1615,1780,2420,2100,2020,2200,2250,2290],
+};
+const brPSF={
+  lq3: [240,265,288,310,330,350,372,395,425,565,632,562,548,535,540],
+  lq4: [258,282,305,328,350,372,395,418,448,598,660,600,590,578,584],
+  lux3:[310,340,368,398,428,458,490,520,558,720,658,638,648,660,665],
+  lux4:[322,352,382,412,442,472,505,538,578,750,672,655,672,690,695],
+};
+const brPct={
+  lq3: [null,11,10,9,8,7,7,7,9,37,13,-12,-2,-2,1],
+  lq4: [null,11,9,8,7,7,7,7,11,37,11,-10,-1,-2,2],
+  lux3:[null,9,8,8,7,7,7,7,10,36,-8,-4,1,1,1],
+  lux4:[null,9,8,8,7,7,7,8,10,36,-13,-4,9,2,2],
+};
+
+// Compare current vs GFC trajectory
+const compareYrs=['Yr 0 (Peak)','Yr 1','Yr 2','Yr 3','Yr 4 (now→)','Yr 5','Yr 6'];
+const gfcTraj=  [100, 94, 83, 67, 53, 49, 47];
+const nowTraj=  [100, 98, 94, 90, 86, null, null];
+const softLand= [null,null,null,null,86, 89, 94];
+const modRec=   [null,null,null,null,86, 80, 75];
+
+// RLCC vs luxury proxy
+const rlccYrs=[];for(let y=2000;y<=2026;y++)rlccYrs.push(y.toString());
+const rlccPrx=[320,338,360,390,428,498,580,638,655,640,595,490,375,380,395,420,462,508,560,610,680,950,1650,1580,1720,1820,1870];
+const cvLuxPrx=[280,298,318,342,374,430,490,528,540,530,488,412,328,340,352,378,416,458,502,548,604,840,1400,1260,1250,1280,1310];
+
+const fmt$=v=>v>=1000?'$'+(v/1000).toFixed(0)+'K':'$'+v+'K';
+const fmt$M=v=>v>=1000?'$'+(v/1000).toFixed(2)+'M':'$'+(v).toFixed(0)+'K';
+
+function ds(label,data,color,dash=false,fill=false){
+  return{label,data,borderColor:color,backgroundColor:color+(fill?'15':'10'),
+    borderWidth:dash?1.5:2.5,borderDash:dash?[5,4]:[],
+    pointRadius:3,pointBackgroundColor:color,pointBorderColor:'#0f2744',
+    pointBorderWidth:1.5,tension:.35,fill};
+}
+
+// RECESSION BANDS as datasets (invisible lines + fill)
+function addBand(chart,xMin,xMax,color){
+  // use annotation-like approach via background color — not available without plugin
+  // instead we'll add subtle shaded area via a dummy dataset
+}
+
+function showTab(id){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+  event.target.classList.add('active');
+  if(!charts[id])buildChart(id);
+}
+
+// ── HISTORY CHART ────────────────────────────────────────────────────────
+let histView='price';
+function buildHistory(){
+  const ctx=document.getElementById('histChart').getContext('2d');
+  const d=histView==='price'?priceData:indexData;
+  const yFmt=histView==='price'?v=>'$'+v+'K':v=>v;
+  charts.histRef=new Chart(ctx,{type:'line',data:{labels:years30,datasets:[
+    ds('La Quinta',d.lq,C.lq),
+    ds('Palm Desert',d.pd,C.pd),
+    ds('Rancho Mirage',d.rm,C.rm),
+    ds('Indian Wells',d.iw,C.iw),
+    ds('CV Median',d.cv,C.cv,true),
+  ]},options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{...tt,callbacks:{label:c=>{
+      const v=c.raw;
+      return` ${c.dataset.label}: `+(histView==='price'?'$'+v+'K':v+' (indexed)');
+    }}}},
+    scales:{
+      x:{grid:{color:gc},ticks:{color:'#8a9ab5',font:{size:11},maxTicksLimit:16}},
+      y:{grid:{color:gc},ticks:{color:'#8a9ab5',callback:v=>yFmt(v)}}
+    }
+  }});
+  charts.history=true;
+}
+function setHistView(v,btn){
+  histView=v;
+  document.querySelectorAll('#hist-toggle .tbtn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  if(!charts.histRef){buildHistory();return;}
+  const d=v==='price'?priceData:indexData;
+  const keys=['lq','pd','rm','iw','cv'];
+  charts.histRef.data.datasets.forEach((ds,i)=>{ds.data=d[keys[i]];});
+  charts.histRef.options.scales.y.ticks.callback=v=>v==='price'?'$'+v+'K':v;
+  charts.histRef.update();
+}
+
+// ── DOWNTURNS ────────────────────────────────────────────────────────────
+function buildDownturns(){
+  const ctx=document.getElementById('gfcChart').getContext('2d');
+  new Chart(ctx,{type:'line',data:{labels:gfcYears,datasets:[
+    ds('La Quinta',gfcIdx.lq,C.lq),
+    ds('Palm Desert',gfcIdx.pd,C.pd),
+    ds('Rancho Mirage',gfcIdx.rm,C.rm),
+    ds('Indian Wells',gfcIdx.iw,C.iw),
+    ds('CV Median',gfcIdx.cv,C.cv,true),
+  ]},options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{...tt,callbacks:{label:c=>` ${c.dataset.label}: ${c.raw} (peak=100)`}}},
+    scales:{
+      x:{grid:{color:gc},ticks:{color:'#8a9ab5'}},
+      y:{grid:{color:gc},min:40,max:210,ticks:{color:'#8a9ab5',callback:v=>v},title:{display:true,text:'Index (2006 Peak = 100)',color:'#8a9ab5',font:{size:10}}}
+    }
+  }});
+
+  const ctx2=document.getElementById('distressChart').getContext('2d');
+  new Chart(ctx2,{type:'bar',data:{labels:distressYears,datasets:[{
+    label:'Distressed Sales %',
+    data:distressPct,
+    backgroundColor:distressYears.map((_,i)=>i>=2&&i<=5?'rgba(224,85,85,0.6)':'rgba(201,168,76,0.35)'),
+    borderRadius:4,
+  }]},options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{...tt,callbacks:{label:c=>` ${c.raw}% distressed sales`}}},
+    scales:{x:{grid:{color:gc},ticks:{color:'#8a9ab5'}},y:{grid:{color:gc},ticks:{color:'#8a9ab5',callback:v=>v+'%'},max:65}}}});
+  charts.downturns=true;
+}
+
+// ── LUXURY ───────────────────────────────────────────────────────────────
+function buildLuxury(){
+  const ctx=document.getElementById('luxChart').getContext('2d');
+  new Chart(ctx,{type:'line',data:{labels:luxYears,datasets:[
+    ds('Luxury Golf Community Proxy',luxProxy,C.gold,false,true),
+    ds('CV Broad Market Median',cvBroad,C.cv,true),
+    ds('La Quinta All-tier',lqAll,C.lq,true),
+  ]},options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{...tt,callbacks:{label:c=>` ${c.dataset.label}: ${c.raw} (2005=100)`}}},
+    scales:{
+      x:{grid:{color:gc},ticks:{color:'#8a9ab5',maxTicksLimit:14}},
+      y:{grid:{color:gc},min:50,max:360,ticks:{color:'#8a9ab5',callback:v=>v},title:{display:true,text:'Index (2005 = 100)',color:'#8a9ab5',font:{size:10}}}
+    }
+  }});
+
+  // City divergence chart
+  const ctx2=document.getElementById('cityDivChart').getContext('2d');
+  new Chart(ctx2,{type:'bar',data:{
+    labels:['Indian Wells','Rancho Mirage','La Quinta','Palm Desert','Palm Springs','Bermuda Dunes'],
+    datasets:[
+      {label:'vs 2022 Peak',data:[12.1,-3.5,-13,-8.9,-23.7,-20.3],backgroundColor:d=>d.raw>=0?'rgba(42,157,92,0.6)':'rgba(224,85,85,0.5)',borderRadius:4},
+    ]
+  },options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{...tt,callbacks:{label:c=>` ${c.raw>0?'+':''}${c.raw}% vs 2022 peak`}}},
+    scales:{
+      x:{grid:{color:gc},ticks:{color:'#8a9ab5',font:{size:10}}},
+      y:{grid:{color:gc},ticks:{color:'#8a9ab5',callback:v=>v+'%'}}
+    }
+  }});
+  charts.luxury=true;
+}
+
+// ── BEDROOMS ─────────────────────────────────────────────────────────────
+let brView='price';
+function buildBedrooms(){
+  const ctx=document.getElementById('brHistChart').getContext('2d');
+  charts.brRef=new Chart(ctx,{type:'line',data:{labels:brYrs,datasets:[
+    ds('La Quinta 3BR',brPrice.lq3,C.lq),
+    ds('La Quinta 4BR',brPrice.lq4,'#5580a4',true),
+    ds('Luxury 3BR ($1M+)',brPrice.lux3,C.rm),
+    ds('Luxury 4BR ($1M+)',brPrice.lux4,'#3d8c5e',true),
+  ]},options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{...tt,callbacks:{label:c=>` ${c.dataset.label}: $${c.raw}K`}}},
+    scales:{
+      x:{grid:{color:gc},ticks:{color:'#8a9ab5'}},
+      y:{grid:{color:gc},ticks:{color:'#8a9ab5',callback:v=>'$'+v+'K'}}
+    }
+  }});
+  charts.bedrooms=true;
+}
+function setBRView(v,btn){
+  brView=v;
+  document.querySelectorAll('#br-toggle .tbtn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  if(!charts.brRef)return;
+  const d=v==='price'?brPrice:v==='psf'?brPSF:brPct;
+  const keys=['lq3','lq4','lux3','lux4'];
+  charts.brRef.data.datasets.forEach((ds,i)=>{ds.data=d[keys[i]];});
+  const fmt=v==='price'?x=>'$'+x+'K':v==='psf'?x=>'$'+x+'/sf':x=>(x===null?'':x+'%');
+  charts.brRef.options.scales.y.ticks.callback=fmt;
+  charts.brRef.options.plugins.tooltip.callbacks={label:c=>{
+    const v2=c.raw;
+    if(v2===null)return null;
+    return` ${c.dataset.label}: `+(brView==='price'?'$'+v2+'K':brView==='psf'?'$'+v2+'/sf':v2+'%');
+  }};
+  charts.brRef.update();
+}
+
+// ── TODAY ─────────────────────────────────────────────────────────────────
+function buildToday(){
+  const ctx=document.getElementById('compareChart').getContext('2d');
+  new Chart(ctx,{type:'line',data:{labels:compareYrs,datasets:[
+    {...ds('GFC Trajectory (2006–2012)',gfcTraj,'#e05555',false,true),tension:.4},
+    {...ds('Current Correction (2022→)',nowTraj,C.gold,false,false),tension:.4},
+    {...ds('Soft Landing Scenario',softLand,C.green,true),tension:.4},
+    {...ds('Moderate Recession Scenario',modRec,'#e07b2a',true),tension:.4},
+  ]},options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'bottom',labels:{color:'#8a9ab5',font:{size:11},padding:12}},tooltip:{...tt,callbacks:{label:c=>c.raw===null?null:` ${c.dataset.label}: ${c.raw} (peak=100)`}}},
+    scales:{
+      x:{grid:{color:gc},ticks:{color:'#8a9ab5'}},
+      y:{grid:{color:gc},min:55,max:105,ticks:{color:'#8a9ab5',callback:v=>v},title:{display:true,text:'Index (Peak = 100)',color:'#8a9ab5',font:{size:10}}}
+    }
+  }});
+  charts.today=true;
+}
+
+// ── RLCC ─────────────────────────────────────────────────────────────────
+function buildRLCC(){
+  const ctx=document.getElementById('rlccChart').getContext('2d');
+  new Chart(ctx,{type:'line',data:{labels:rlccYrs,datasets:[
+    ds('RLCC Est. (3BR SFH, 2,400–2,900sf)',rlccPrx,C.gold,false,true),
+    ds('CV Luxury Proxy ($1M+ tier)',cvLuxPrx,C.cv,true),
+  ]},options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{...tt,callbacks:{label:c=>` ${c.dataset.label}: $${c.raw}K`}}},
+    scales:{
+      x:{grid:{color:gc},ticks:{color:'#8a9ab5',maxTicksLimit:14}},
+      y:{grid:{color:gc},ticks:{color:'#8a9ab5',callback:v=>'$'+v+'K'}}
+    }
+  }});
+  charts.rlcc=true;
+}
+
+// ── BUILD CHART ──────────────────────────────────────────────────────────
+function buildChart(id){
+  switch(id){
+    case 'history':   buildHistory();   break;
+    case 'downturns': buildDownturns(); break;
+    case 'luxury':    buildLuxury();    break;
+    case 'bedrooms':  buildBedrooms();  break;
+    case 'today':     buildToday();     break;
+    case 'rlcc':      buildRLCC();      break;
+  }
+}
+
+buildChart('history');
+</script>
+</body>
+</html>

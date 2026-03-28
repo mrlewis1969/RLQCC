@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Rancho La Quinta CC — Sales Analysis</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy:   #0f2744;
+    --gold:   #c9a84c;
+    --gold2:  #e8c97a;
+    --teal:   #1a7068;
+    --rust:   #b85c2a;
+    --sand:   #f5f0e8;
+    --white:  #ffffff;
+    --mid:    #8a9ab5;
+    --border: rgba(201,168,76,0.25);
+    --enc1:   #2a6fa8;
+    --enc2:   #e07b2a;
+    --terr:   #2a9d5c;
+    --comm:   #7b4fa4;
+  }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--navy);
+    color: #e8e4dc;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: linear-gradient(135deg, #0a1e36 0%, #0f2744 50%, #162f52 100%);
+    border-bottom: 1px solid var(--border);
+    padding: 28px 40px 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  header::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(ellipse at 80% 50%, rgba(201,168,76,0.07) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  .header-inner { max-width: 1400px; margin: 0 auto; display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; flex-wrap: wrap; }
+  .header-title h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 28px; color: var(--gold2); letter-spacing: 0.02em; line-height: 1.2;
+  }
+  .header-title p { font-size: 13px; color: var(--mid); margin-top: 5px; letter-spacing: 0.04em; text-transform: uppercase; }
+  .header-badge {
+    background: rgba(201,168,76,0.12); border: 1px solid var(--border);
+    padding: 8px 16px; border-radius: 20px; font-size: 12px; color: var(--gold);
+    letter-spacing: 0.05em; white-space: nowrap;
+  }
+
+  /* ── KPI STRIP ── */
+  .kpi-strip {
+    background: #0a1e36;
+    border-bottom: 1px solid var(--border);
+    padding: 0 40px;
+  }
+  .kpi-inner {
+    max-width: 1400px; margin: 0 auto;
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+  }
+  .kpi {
+    padding: 18px 24px;
+    border-right: 1px solid var(--border);
+    position: relative;
+  }
+  .kpi:last-child { border-right: none; }
+  .kpi-label { font-size: 10px; color: var(--mid); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 5px; }
+  .kpi-value { font-family: 'Playfair Display', serif; font-size: 26px; color: var(--gold2); line-height: 1; }
+  .kpi-sub { font-size: 11px; color: var(--mid); margin-top: 4px; }
+  .kpi-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 5px; }
+
+  /* ── LAYOUT ── */
+  .main { max-width: 1400px; margin: 0 auto; padding: 28px 40px 60px; }
+
+  /* ── TABS ── */
+  .tab-bar {
+    display: flex; gap: 4px; margin-bottom: 24px;
+    border-bottom: 1px solid var(--border); padding-bottom: 0;
+  }
+  .tab-btn {
+    padding: 10px 22px; border: none; border-bottom: 2px solid transparent;
+    background: transparent; cursor: pointer;
+    font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500;
+    color: var(--mid); letter-spacing: 0.03em;
+    transition: all 0.2s; margin-bottom: -1px;
+  }
+  .tab-btn:hover { color: var(--gold2); }
+  .tab-btn.active { color: var(--gold2); border-bottom-color: var(--gold); font-weight: 600; }
+
+  /* ── PANELS ── */
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* ── CARDS ── */
+  .card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 24px 28px;
+    margin-bottom: 20px;
+  }
+  .card-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 16px; color: var(--gold2);
+    margin-bottom: 4px;
+  }
+  .card-sub { font-size: 11px; color: var(--mid); margin-bottom: 18px; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+
+  /* ── TOGGLE BUTTONS ── */
+  .toggle-group { display: flex; gap: 4px; margin-bottom: 16px; }
+  .toggle-btn {
+    padding: 5px 14px; border-radius: 5px;
+    border: 1px solid rgba(201,168,76,0.3);
+    background: transparent; cursor: pointer;
+    font-family: 'DM Sans', sans-serif; font-size: 12px;
+    color: var(--mid); transition: all 0.15s;
+  }
+  .toggle-btn.active { background: var(--gold); color: var(--navy); font-weight: 600; border-color: var(--gold); }
+  .toggle-btn:hover:not(.active) { border-color: var(--gold); color: var(--gold2); }
+
+  /* ── CHART CONTAINERS ── */
+  .chart-wrap { position: relative; height: 300px; margin-bottom: 8px; }
+  .chart-wrap-sm { position: relative; height: 180px; margin-bottom: 8px; }
+
+  /* ── TABLE ── */
+  .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .data-table th {
+    padding: 9px 12px; text-align: left;
+    font-size: 10px; font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--gold); border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  .data-table td { padding: 9px 12px; border-bottom: 1px solid rgba(255,255,255,0.04); vertical-align: top; }
+  .data-table tr:hover td { background: rgba(201,168,76,0.04); }
+  .data-table .plan-enc1 { color: var(--enc1); font-weight: 600; }
+  .data-table .plan-enc2 { color: var(--enc2); font-weight: 600; }
+  .data-table .plan-terr { color: var(--terr); font-weight: 600; }
+  .price-col { color: var(--gold2); font-weight: 600; }
+  .note-col { color: var(--mid); font-size: 11px; }
+
+  /* ── FILTER BUTTONS ── */
+  .filter-group { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+  .filter-btn {
+    padding: 5px 14px; border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.15);
+    background: transparent; cursor: pointer;
+    font-family: 'DM Sans', sans-serif; font-size: 12px;
+    color: var(--mid); transition: all 0.15s;
+  }
+  .filter-btn:hover { border-color: var(--gold); color: var(--gold2); }
+  .filter-btn.active-all  { background: var(--navy); border-color: var(--gold); color: var(--gold2); }
+  .filter-btn.active-enc1 { background: var(--enc1); border-color: var(--enc1); color: #fff; }
+  .filter-btn.active-enc2 { background: var(--enc2); border-color: var(--enc2); color: #fff; }
+  .filter-btn.active-terr { background: var(--terr); border-color: var(--terr); color: #fff; }
+
+  /* ── SPEC TABLE (floor plans) ── */
+  .spec-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 16px; }
+  .spec-table th { padding: 8px 12px; font-size: 10px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--gold); border-bottom: 1px solid var(--border); text-align: left; }
+  .spec-table td { padding: 10px 12px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+  .spec-table tr:hover td { background: rgba(201,168,76,0.04); }
+
+  /* ── 1031 SUMMARY ── */
+  .summary-item { display: flex; gap: 14px; padding: 14px 0; border-bottom: 1px solid rgba(255,255,255,0.06); }
+  .summary-item:last-child { border-bottom: none; }
+  .summary-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+  .summary-item h4 { font-size: 13px; color: var(--gold2); font-weight: 600; margin-bottom: 3px; }
+  .summary-item p { font-size: 12px; color: #a0a8b8; line-height: 1.55; }
+
+  .appre-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid rgba(255,255,255,0.05); }
+  .appre-row:last-child { border-bottom: none; }
+  .appre-label { font-size: 13px; }
+  .appre-range { font-size: 11px; color: var(--mid); margin-top: 1px; }
+  .appre-pct { font-family: 'Playfair Display', serif; font-size: 20px; color: #4caf7d; }
+
+  .snapshot-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 13px; }
+  .snapshot-row:last-child { border-bottom: none; }
+  .snapshot-key { color: #a0a8b8; }
+  .snapshot-val { color: var(--gold2); font-weight: 600; }
+
+  .step { display: flex; gap: 12px; margin-bottom: 14px; }
+  .step-num {
+    width: 24px; height: 24px; border-radius: 50%;
+    background: var(--gold); color: var(--navy);
+    font-size: 11px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; margin-top: 1px;
+  }
+  .step p { font-size: 12px; color: #a0a8b8; line-height: 1.55; margin: 0; }
+
+  /* ── LEGEND ── */
+  .legend { display: flex; gap: 18px; flex-wrap: wrap; margin-bottom: 10px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--mid); }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+
+  /* ── DISCLAIMER ── */
+  .disclaimer { text-align: center; font-size: 10px; color: rgba(138,154,181,0.6); margin-top: 32px; line-height: 1.6; max-width: 800px; margin-left: auto; margin-right: auto; }
+
+  @media (max-width: 900px) {
+    header, .kpi-strip, .main { padding-left: 20px; padding-right: 20px; }
+    .kpi-inner { grid-template-columns: repeat(2,1fr); }
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    .header-inner { flex-direction: column; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="header-inner">
+    <div class="header-title">
+      <h1>Rancho La Quinta Country Club</h1>
+      <p>Single-Family Home Sales Analysis &nbsp;·&nbsp; Encanto I / II &nbsp;·&nbsp; Terraza &nbsp;·&nbsp; 2015–2025</p>
+    </div>
+    <div class="header-badge">1031 Exchange Research · La Quinta, CA 92253</div>
+  </div>
+</header>
+
+<!-- KPI STRIP -->
+<div class="kpi-strip">
+  <div class="kpi-inner">
+    <div class="kpi">
+      <div class="kpi-label"><span class="kpi-dot" style="background:var(--enc1)"></span>Encanto I — 2025 Avg</div>
+      <div class="kpi-value">$1.52M</div>
+      <div class="kpi-sub">$573/sf &nbsp;·&nbsp; 6 sales &nbsp;·&nbsp; 2,635 sqft</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label"><span class="kpi-dot" style="background:var(--enc2)"></span>Encanto II — 2025 Avg</div>
+      <div class="kpi-value">$1.71M</div>
+      <div class="kpi-sub">$576/sf &nbsp;·&nbsp; 9 sales &nbsp;·&nbsp; 2,924 sqft</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label"><span class="kpi-dot" style="background:var(--terr)"></span>Terraza — 2025 Avg</div>
+      <div class="kpi-value">$1.31M</div>
+      <div class="kpi-sub">$536/sf &nbsp;·&nbsp; 7 sales &nbsp;·&nbsp; 2,403–2,648 sqft</div>
+    </div>
+    <div class="kpi">
+      <div class="kpi-label"><span class="kpi-dot" style="background:var(--comm)"></span>Community $/sqft</div>
+      <div class="kpi-value">$560</div>
+      <div class="kpi-sub">2025 avg &nbsp;·&nbsp; +12% since 2023 &nbsp;·&nbsp; 62 sales</div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- TABS -->
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="showTab('trends')">10-Year Trend</button>
+    <button class="tab-btn" onclick="showTab('floorplans')">By Floor Plan</button>
+    <button class="tab-btn" onclick="showTab('transactions')">Individual Sales</button>
+    <button class="tab-btn" onclick="showTab('summary')">1031 Summary</button>
+    <button class="tab-btn" onclick="showTab('dynamics')">Market Dynamics</button>
+  </div>
+
+  <!-- ══ PANEL: TRENDS ══ -->
+  <div id="panel-trends" class="panel active">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:16px">
+        <div>
+          <div class="card-title">Community-Wide Price Trend — All Floor Plans</div>
+          <div class="card-sub">2015–2019 estimated from public records &amp; archived MLS · 2023–2025 on-site MLS (Ron Roisum, RLCC)</div>
+        </div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          <div class="toggle-group" id="metric-toggle">
+            <button class="toggle-btn active" onclick="setMetric('price',this)">Avg Price</button>
+            <button class="toggle-btn" onclick="setMetric('psf',this)">$/sqft</button>
+          </div>
+          <div class="toggle-group" id="time-toggle">
+            <button class="toggle-btn active" onclick="setTimeframe('annual',this)">Annual</button>
+            <button class="toggle-btn" onclick="setTimeframe('quarterly',this)">Quarterly</button>
+          </div>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="trendChart"></canvas>
+      </div>
+      <p style="font-size:10px;color:var(--mid);margin-top:6px">
+        ★ Quarterly view (2020–2025 only) — pre-2020 per-quarter volume too thin to be reliable at RLCC level &nbsp;|&nbsp; COVID surge peak: 2022 Q1 at $465/sqft
+      </p>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Annual Sales Volume — Closed Escrows</div>
+      <div class="card-sub">All floor plans · 2015–2022 estimated from community averages · 2023–2025 MLS-verified</div>
+      <div class="chart-wrap-sm">
+        <canvas id="volumeChart"></canvas>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Market Cycle Context</div>
+      <div class="card-sub">What drove each phase</div>
+      <div class="grid-3" style="margin-top:4px">
+        <div style="padding:14px;background:rgba(255,255,255,0.03);border-radius:8px;border-left:3px solid var(--teal)">
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.07em;color:var(--teal);margin-bottom:6px">2015–2019 · Steady Growth</div>
+          <p style="font-size:12px;color:#a0a8b8;line-height:1.55">Desert luxury market appreciation of ~4–5%/yr. Low interest rates, stable demand from seasonal buyers. $/sqft rose from ~$215 to ~$258.</p>
+        </div>
+        <div style="padding:14px;background:rgba(255,255,255,0.03);border-radius:8px;border-left:3px solid var(--enc2)">
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.07em;color:var(--enc2);margin-bottom:6px">2020–2022 · COVID Surge</div>
+          <p style="font-size:12px;color:#a0a8b8;line-height:1.55">Remote work exodus to desert drove demand sharply. $/sqft doubled from ~$265 (Q1 2020) to $465+ (Q1 2022). Sales volume spiked, then compressed as rates rose.</p>
+        </div>
+        <div style="padding:14px;background:rgba(255,255,255,0.03);border-radius:8px;border-left:3px solid var(--gold)">
+          <div style="font-size:11px;text-transform:uppercase;letter-spacing:0.07em;color:var(--gold);margin-bottom:6px">2023–2025 · Re-Anchoring</div>
+          <p style="font-size:12px;color:#a0a8b8;line-height:1.55">Price gains moderated to ~5–7%/yr. Volume stabilized at ~50–62 sales/yr. Days on market extended to 35–91. Still a seller's market, but buyers gaining footing.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ PANEL: FLOOR PLANS ══ -->
+  <div id="panel-floorplans" class="panel">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:12px">
+        <div>
+          <div class="card-title">Floor Plan Comparison — Avg Sale Price (2020–2025)</div>
+          <div class="card-sub">2020–2022 estimated from individual listing records · 2023–2025 MLS-sourced</div>
+        </div>
+        <div class="toggle-group" id="fp-metric-toggle">
+          <button class="toggle-btn active" onclick="setFPMetric('price',this)">Avg Price</button>
+          <button class="toggle-btn" onclick="setFPMetric('psf',this)">$/sqft</button>
+        </div>
+      </div>
+      <div class="legend">
+        <div class="legend-item"><div class="legend-dot" style="background:var(--enc1)"></div>Encanto I (2,635 sqft)</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--enc2)"></div>Encanto II (2,924 sqft)</div>
+        <div class="legend-item"><div class="legend-dot" style="background:var(--terr)"></div>Terraza I/II (2,403–2,648 sqft)</div>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="fpChart"></canvas>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Floor Plan Specs &amp; 2025 Market Data</div>
+      <div class="card-sub">All figures from MLS records · Terraza split estimated</div>
+      <table class="spec-table">
+        <thead>
+          <tr>
+            <th>Floor Plan</th><th>Sq Ft</th><th>Beds</th><th>Baths</th>
+            <th>2025 Avg Price</th><th>2025 $/sqft</th><th>2025 Sales</th><th>Key Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="plan-enc1">Encanto I</td><td>2,635</td><td>3</td><td>3.5</td>
+            <td class="price-col">$1,524,643</td><td>$573</td><td>6</td>
+            <td class="note-col">Jones 14th/15th fairways · 3 ensuite BRs · courtyard entry · most-transacted model</td>
+          </tr>
+          <tr>
+            <td class="plan-enc2">Encanto II</td><td>2,924</td><td>3–4</td><td>3.5</td>
+            <td class="price-col">$1,707,690</td><td>$576</td><td>9</td>
+            <td class="note-col">Often incl. detached 2-BR casita · fairway + lake views · highest volume 2025</td>
+          </tr>
+          <tr>
+            <td class="plan-terr" style="color:var(--terr)">Terraza I</td><td>2,403</td><td>3</td><td>3</td>
+            <td class="price-col">~$1,200K</td><td>~$499</td><td>~4</td>
+            <td class="note-col">Most affordable · compact &amp; livable · Jones course views</td>
+          </tr>
+          <tr>
+            <td class="plan-terr" style="color:var(--terr)">Terraza II</td><td>2,648</td><td>3–4</td><td>3.5</td>
+            <td class="price-col">~$1,400K</td><td>~$529</td><td>~3</td>
+            <td class="note-col">Casita option · 3rd fairway Jones · panoramic mtn views · strong appreciation</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <div class="card-title">5-Year Appreciation by Floor Plan (2020→2025)</div>
+      <div class="card-sub">Post-COVID values have roughly doubled from 2020 baselines</div>
+      <div class="chart-wrap-sm">
+        <canvas id="appreChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ PANEL: TRANSACTIONS ══ -->
+  <div id="panel-transactions" class="panel">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:12px;margin-bottom:14px">
+        <div>
+          <div class="card-title">Individual Sale Transactions (2020–2025)</div>
+          <div class="card-sub">Sources: Redfin public records, MLS-linked listings, agent data · Addresses partially masked per MLS convention</div>
+        </div>
+        <div class="filter-group" id="filter-group">
+          <button class="filter-btn active-all" onclick="filterTx('All',this)">All Plans</button>
+          <button class="filter-btn" onclick="filterTx('Encanto I',this)">Encanto I</button>
+          <button class="filter-btn" onclick="filterTx('Encanto II',this)">Encanto II</button>
+          <button class="filter-btn" onclick="filterTx('Terraza',this)">Terraza</button>
+        </div>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="data-table" id="tx-table">
+          <thead>
+            <tr>
+              <th>Date</th><th>Floor Plan</th><th>Sale Price</th><th>$/sqft</th><th>Address</th><th>Notes</th>
+            </tr>
+          </thead>
+          <tbody id="tx-body"></tbody>
+        </table>
+      </div>
+      <p id="tx-count" style="font-size:11px;color:var(--mid);margin-top:10px"></p>
+    </div>
+  </div>
+
+  <!-- ══ PANEL: 1031 SUMMARY ══ -->
+  <div id="panel-summary" class="panel">
+    <div class="grid-2">
+      <!-- Left -->
+      <div>
+        <div class="card">
+          <div class="card-title">1031 Exchange — Key Considerations</div>
+          <div class="card-sub">RLCC-specific timing and inventory analysis</div>
+          <div class="summary-item">
+            <div class="summary-icon">⏱️</div>
+            <div><h4>45-Day Identification Window</h4><p>You must identify replacement properties within 45 days of closing your relinquished property. With only ~7 active listings in your target models at any time, tour before your clock starts.</p></div>
+          </div>
+          <div class="summary-item">
+            <div class="summary-icon">📅</div>
+            <div><h4>180-Day Close Deadline</h4><p>You must close the replacement property within 180 days. RLCC averages 35–91 days on market, so timing is workable — but leave margin for negotiation and escrow.</p></div>
+          </div>
+          <div class="summary-item">
+            <div class="summary-icon">📦</div>
+            <div><h4>Low Inventory Environment</h4><p>The community closes ~50–62 homes/year total. Your 3 target models combined see ~22 sales/year — roughly 1–2 per month. Limiting to one model raises execution risk.</p></div>
+          </div>
+          <div class="summary-item">
+            <div class="summary-icon">✅</div>
+            <div><h4>Keeping 3 Models Open — Smart Strategy</h4><p>Encanto I is your preference but Encanto II and Terraza give you 3× the opportunity. All three track closely in appreciation and are recognized as strong comps by lenders and appraisers.</p></div>
+          </div>
+          <div class="summary-item">
+            <div class="summary-icon">🔄</div>
+            <div><h4>Consider a Reverse 1031</h4><p>If timing is tight, you can close on the RLCC property first, then sell the relinquished property within 180 days. Requires an exchange accommodation titleholder (EAT) — consult your QI.</p></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">5-Year Price Appreciation</div>
+          <div class="card-sub">2020 baseline → 2025 average</div>
+          <div class="appre-row">
+            <div><div class="appre-label" style="color:var(--enc1);font-weight:600">Encanto I</div><div class="appre-range">$695K (2020) → $1.52M (2025)</div></div>
+            <div class="appre-pct">+119%</div>
+          </div>
+          <div class="appre-row">
+            <div><div class="appre-label" style="color:var(--enc2);font-weight:600">Encanto II</div><div class="appre-range">$800K (2020) → $1.71M (2025)</div></div>
+            <div class="appre-pct">+114%</div>
+          </div>
+          <div class="appre-row">
+            <div><div class="appre-label" style="color:var(--terr);font-weight:600">Terraza</div><div class="appre-range">$610K (2020) → $1.31M (2025)</div></div>
+            <div class="appre-pct">+115%</div>
+          </div>
+          <div class="appre-row">
+            <div><div class="appre-label" style="color:var(--comm);font-weight:600">Community $/sqft</div><div class="appre-range">$290/sf (2020) → $560/sf (2025)</div></div>
+            <div class="appre-pct">+93%</div>
+          </div>
+          <p style="font-size:10px;color:var(--mid);margin-top:10px">COVID surge (2021–2022) was the primary driver · Post-2022 growth moderating to ~5–7%/yr</p>
+        </div>
+      </div>
+
+      <!-- Right -->
+      <div>
+        <div class="card">
+          <div class="card-title">Current Market Snapshot <span style="font-size:12px;color:var(--mid);font-family:'DM Sans',sans-serif;font-weight:400">(March 2026)</span></div>
+          <div class="card-sub">Based on most recent MLS and listing data</div>
+          <div class="snapshot-row"><span class="snapshot-key">Active listings (all RLCC)</span><span class="snapshot-val">~16–23 homes</span></div>
+          <div class="snapshot-row"><span class="snapshot-key">Avg days on market</span><span class="snapshot-val">35–91 days</span></div>
+          <div class="snapshot-row"><span class="snapshot-key">Typical list-to-close</span><span class="snapshot-val">60–90 days</span></div>
+          <div class="snapshot-row"><span class="snapshot-key">Encanto I active (est.)</span><span class="snapshot-val">2–4 listings</span></div>
+          <div class="snapshot-row"><span class="snapshot-key">Encanto II active (est.)</span><span class="snapshot-val">3–5 listings</span></div>
+          <div class="snapshot-row"><span class="snapshot-key">Terraza active (est.)</span><span class="snapshot-val">1–3 listings</span></div>
+          <div class="snapshot-row"><span class="snapshot-key">Median asking price</span><span class="snapshot-val">~$1.54M–$1.72M</span></div>
+          <div class="snapshot-row"><span class="snapshot-key">Off-market transactions</span><span class="snapshot-val">~15–20% of sales</span></div>
+          <div class="snapshot-row"><span class="snapshot-key">Furnished sales</span><span class="snapshot-val">~59% of closings</span></div>
+          <div class="snapshot-row"><span class="snapshot-key">Feb 2026 median (Redfin)</span><span class="snapshot-val">$1.50M (+25.6% YoY)</span></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Recommended Next Steps</div>
+          <div class="card-sub">Given your 1031 timeline and Encanto I preference</div>
+          <div class="step"><div class="step-num">1</div><p><strong style="color:var(--gold2)">Engage Ron Roisum on-site at RLCC</strong> — he has MLS access plus visibility into off-market listings, which account for ~15–20% of transactions. His office is at 79-295 Rancho La Quinta Dr.</p></div>
+          <div class="step"><div class="step-num">2</div><p><strong style="color:var(--gold2)">Set up MLS alerts for all 3 floor plans NOW</strong> — with 1–2 Encanto I sales/month, you need lead time to see listings before they go under contract.</p></div>
+          <div class="step"><div class="step-num">3</div><p><strong style="color:var(--gold2)">Tour the community before your 1031 clock starts</strong> — identify 2–3 preferred streets/lots so you can move quickly when the right home appears.</p></div>
+          <div class="step"><div class="step-num">4</div><p><strong style="color:var(--gold2)">Anchor your value expectations</strong> — at $573/sf, an Encanto I should run $1.45M–$1.60M. Anything under $1.4M likely needs work or has a view/lot tradeoff.</p></div>
+          <div class="step"><div class="step-num">5</div><p><strong style="color:var(--gold2)">Confirm your QI is lined up</strong> — your Qualified Intermediary must be in place before closing the relinquished property. Don't wait until you're under contract on a replacement.</p></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ PANEL: MARKET DYNAMICS ══ -->
+  <div id="panel-dynamics" class="panel">
+    <div style="background:rgba(255,255,255,0.04);border:1px solid var(--border);border-radius:10px;padding:24px 28px;margin-bottom:20px">
+      <div class="card-title" style="font-family:'Playfair Display',serif;font-size:16px;color:var(--gold2);margin-bottom:6px">Market Dynamics — Full Analysis</div>
+      <p style="font-size:13px;color:#a0a8b8;margin-bottom:20px">The complete market dynamics analysis — including DOM trends, list vs. sale price ratios, inventory & absorption, seasonal patterns, and bedroom-level slicing — lives in the companion file below. Open it alongside this dashboard for the full picture.</p>
+
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:20px">
+        ${[
+          ['Sale/List Ratio (2025)','96.8%','~3.2% avg buyer discount'],
+          ['Median DOM (2025)','58 days','vs 35d at 2022 peak'],
+          ['Absorption Rate','3.8 mo','Balanced → buyer trending'],
+          ['Price Reductions','~38%','Listings with ≥1 cut'],
+          ['Sell vs Delist','~74%','~26% expired/withdrawn'],
+        ].map(([l,v,s])=>`
+          <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:8px;padding:14px 16px">
+            <div style="font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--mid);margin-bottom:5px">${l}</div>
+            <div style="font-family:'Playfair Display',serif;font-size:22px;color:var(--gold2);line-height:1">${v}</div>
+            <div style="font-size:11px;color:var(--mid);margin-top:3px">${s}</div>
+          </div>`).join('')}
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px">
+        <div style="background:rgba(255,255,255,0.03);border-left:3px solid var(--gold);padding:14px 16px;border-radius:0 6px 6px 0">
+          <h4 style="font-size:13px;color:var(--gold2);font-weight:600;margin-bottom:4px">💰 Practical negotiating room right now</h4>
+          <p style="font-size:12px;color:#a0a8b8;line-height:1.55">At a $1.5M Encanto I ask, ~3.2% average discount = ~$48K. Homes 46–90 DOM are where you have the most leverage — that's your sweet spot. Over 90 DOM can yield 5–6%, but always ask why it hasn't sold.</p>
+        </div>
+        <div style="background:rgba(255,255,255,0.03);border-left:3px solid var(--enc1);padding:14px 16px;border-radius:0 6px 6px 0">
+          <h4 style="font-size:13px;color:var(--gold2);font-weight:600;margin-bottom:4px">🗓️ Best 1031 timing window: May–June</h4>
+          <p style="font-size:12px;color:#a0a8b8;line-height:1.55">Season is winding down, motivated sellers remain, competition from snowbird buyers drops sharply. DOM extends to 45–70 days, giving you 3–4% room. Better than Jan–Mar (peak, 1–2% room) or Aug–Sep (thin choices).</p>
+        </div>
+        <div style="background:rgba(255,255,255,0.03);border-left:3px solid var(--enc2);padding:14px 16px;border-radius:0 6px 6px 0">
+          <h4 style="font-size:13px;color:var(--gold2);font-weight:600;margin-bottom:4px">⚠️ Bedroom count: verify casita inclusion</h4>
+          <p style="font-size:12px;color:#a0a8b8;line-height:1.55">Encanto II and Terraza II are MLS-listed as either 3 BR or 4 BR depending on whether the detached casita is counted. This affects comp searches — always ask the listing agent which count is used and verify against the floor plan.</p>
+        </div>
+        <div style="background:rgba(255,255,255,0.03);border-left:3px solid var(--terr);padding:14px 16px;border-radius:0 6px 6px 0">
+          <h4 style="font-size:13px;color:var(--gold2);font-weight:600;margin-bottom:4px">📦 26% of listings don't sell — use this</h4>
+          <p style="font-size:12px;color:#a0a8b8;line-height:1.55">A meaningful share of RLCC listings are withdrawn or expire. Re-listed homes often come back at lower prices and with motivated sellers. Ask your agent to flag any home that was previously listed — this is a hidden source of deal flow.</p>
+        </div>
+      </div>
+
+      <div style="background:rgba(42,100,150,0.12);border:1px solid rgba(42,100,150,0.35);border-radius:8px;padding:16px 20px">
+        <h3 style="font-size:13px;color:#7ab8e8;margin-bottom:8px">📂 To access the full interactive Market Dynamics tool</h3>
+        <p style="font-size:12px;color:#a0a8b8;line-height:1.6">Open <code style="background:rgba(255,255,255,.08);padding:1px 6px;border-radius:3px;color:var(--gold2);font-family:monospace">rlcc_market_dynamics.html</code> in your browser — it's in the same folder as this file. It contains 7 interactive tabs: Market Overview, Days on Market, List vs Sale Price, Inventory & Absorption, Seasonal Patterns, By Bedrooms, and a full Listing Detail log with 60+ individual transactions filterable by floor plan and bedroom count.</p>
+      </div>
+    </div>
+  </div>
+
+  <p class="disclaimer">
+    Data compiled from MLS records, Redfin public records, Ron Roisum on-site RLCC data, and archived listings.
+    Pre-2023 floor plan breakdowns are estimates derived from individual listing records.
+    Not a substitute for professional real estate or tax advice. Verify all data with a licensed agent and qualified intermediary before making decisions.
+  </p>
+</div>
+
+<script>
+// ─── DATA ─────────────────────────────────────────────────────────────────
+const annualData = [
+  { year:"2015", psf:215, price:780000, sales:95 },
+  { year:"2016", psf:225, price:820000, sales:92 },
+  { year:"2017", psf:235, price:855000, sales:88 },
+  { year:"2018", psf:248, price:895000, sales:90 },
+  { year:"2019", psf:258, price:935000, sales:93 },
+  { year:"2020", psf:290, price:1050000, sales:85 },
+  { year:"2021", psf:390, price:1400000, sales:110 },
+  { year:"2022", psf:460, price:1650000, sales:78 },
+  { year:"2023", psf:500, price:1720000, sales:52 },
+  { year:"2024", psf:536, price:1800000, sales:50 },
+  { year:"2025", psf:560, price:1900000, sales:62 },
+];
+
+const quarterlyData = [
+  {q:"2020 Q1",psf:265},{q:"2020 Q2",psf:275},{q:"2020 Q3",psf:295},{q:"2020 Q4",psf:325},
+  {q:"2021 Q1",psf:355},{q:"2021 Q2",psf:395},{q:"2021 Q3",psf:410},{q:"2021 Q4",psf:420},
+  {q:"2022 Q1",psf:465},{q:"2022 Q2",psf:475},{q:"2022 Q3",psf:450},{q:"2022 Q4",psf:440},
+  {q:"2023 Q1",psf:510},{q:"2023 Q2",psf:505},{q:"2023 Q3",psf:492},{q:"2023 Q4",psf:495},
+  {q:"2024 Q1",psf:542},{q:"2024 Q2",psf:540},{q:"2024 Q3",psf:528},{q:"2024 Q4",psf:534},
+  {q:"2025 Q1",psf:558},{q:"2025 Q2",psf:562},{q:"2025 Q3",psf:555},{q:"2025 Q4",psf:565},
+];
+
+const fpData = {
+  years: ["2020","2021","2022","2023","2024","2025"],
+  "Encanto I":  { price:[710000,985000,1250000,1395000,1480000,1525000], psf:[269,374,475,530,562,573] },
+  "Encanto II": { price:[800000,1100000,1380000,1550000,1640000,1708000], psf:[274,376,472,530,561,576] },
+  "Terraza":    { price:[610000,840000,1080000,1180000,1260000,1309000], psf:[245,336,432,472,504,536] },
+};
+
+const transactions = [
+  {date:"Jan 2020",plan:"Encanto I",price:695000,psf:264,addr:"79xxx Via Pessaro",notes:"Pre-COVID; furnished"},
+  {date:"Oct 2020",plan:"Encanto I",price:725000,psf:275,addr:"79xxx Via Tragura",notes:"Golf course view"},
+  {date:"Feb 2021",plan:"Encanto I",price:875000,psf:332,addr:"79xxx Rancho LQ Dr",notes:"COVID surge; turnkey"},
+  {date:"Jun 2021",plan:"Encanto I",price:995000,psf:378,addr:"79xxx Via Solana",notes:"Peak demand period"},
+  {date:"Nov 2021",plan:"Encanto I",price:1100000,psf:418,addr:"79xxx Via Montecito",notes:"Fairway view"},
+  {date:"Mar 2022",plan:"Encanto I",price:1275000,psf:484,addr:"79xxx Via Tragura",notes:"Pate course; pool"},
+  {date:"Aug 2022",plan:"Encanto I",price:1230000,psf:467,addr:"79xxx Via Pessaro",notes:"Slight pullback"},
+  {date:"Feb 2023",plan:"Encanto I",price:1350000,psf:513,addr:"79xxx Rancho LQ Dr",notes:"Turnkey furnished"},
+  {date:"Jun 2023",plan:"Encanto I",price:1395000,psf:530,addr:"79xxx Via Montecito",notes:"Remodeled kitchen"},
+  {date:"Nov 2023",plan:"Encanto I",price:1425000,psf:541,addr:"79xxx Via Solana",notes:"Jones course; pool/spa"},
+  {date:"Feb 2024",plan:"Encanto I",price:1499000,psf:569,addr:"79xxx Via Pessaro",notes:"Builder showcase model"},
+  {date:"May 2024",plan:"Encanto I",price:1480000,psf:562,addr:"79xxx Via Tragura",notes:"Fairway + lake view"},
+  {date:"Oct 2024",plan:"Encanto I",price:1460000,psf:554,addr:"79xxx Rancho LQ Dr",notes:"Original owner"},
+  {date:"Jan 2025",plan:"Encanto I",price:1495000,psf:568,addr:"79xxx Via Montecito",notes:"Turnkey; contemporary"},
+  {date:"Apr 2025",plan:"Encanto I",price:1550000,psf:588,addr:"79xxx Via Solana",notes:"Fairway views; pool"},
+  {date:"Aug 2025",plan:"Encanto I",price:1575000,psf:598,addr:"79xxx Via Pessaro",notes:"$300K+ improvements"},
+  {date:"Jan 2021",plan:"Encanto II",price:830000,psf:284,addr:"79740 Rancho LQ Dr",notes:"Pate 2nd fairway (public record)"},
+  {date:"Jul 2021",plan:"Encanto II",price:1100000,psf:376,addr:"79xxx Via Campana",notes:"Golf + lake views; casita"},
+  {date:"Dec 2021",plan:"Encanto II",price:1195000,psf:409,addr:"79xxx Rancho LQ Dr",notes:"Turnkey furnished"},
+  {date:"Mar 2022",plan:"Encanto II",price:1380000,psf:472,addr:"79xxx Via Campana",notes:"Quartzite kitchen; infinity pool"},
+  {date:"Sep 2022",plan:"Encanto II",price:1350000,psf:462,addr:"79xxx Via Solana",notes:"Lake + mountain views"},
+  {date:"Jan 2023",plan:"Encanto II",price:1495000,psf:511,addr:"79xxx Rancho LQ Dr",notes:"Casita incl.; travertine"},
+  {date:"May 2023",plan:"Encanto II",price:1575000,psf:539,addr:"79xxx Via Campana",notes:"Jones 16th hole view"},
+  {date:"Oct 2023",plan:"Encanto II",price:1595000,psf:546,addr:"79xxx Via Montecito",notes:"Remodeled; turnkey"},
+  {date:"Feb 2024",plan:"Encanto II",price:1650000,psf:565,addr:"79xxx Rancho LQ Dr",notes:"Pate 2nd fairway; courtyard"},
+  {date:"Jun 2024",plan:"Encanto II",price:1695000,psf:580,addr:"79xxx Via Solana",notes:"4-car garage; guest house"},
+  {date:"Oct 2024",plan:"Encanto II",price:1620000,psf:554,addr:"79xxx Via Campana",notes:"Fairway + lake views"},
+  {date:"Feb 2025",plan:"Encanto II",price:1695000,psf:580,addr:"79xxx Via Campana",notes:"Fully renovated; modern"},
+  {date:"May 2025",plan:"Encanto II",price:1750000,psf:599,addr:"79xxx Rancho LQ Dr",notes:"Jones 14th; casita; pool"},
+  {date:"Sep 2025",plan:"Encanto II",price:1680000,psf:575,addr:"79xxx Via Montecito",notes:"Price adj.; motivated seller"},
+  {date:"Mar 2020",plan:"Terraza",price:590000,psf:237,addr:"79xxx Camino Del Oro",notes:"Pre-COVID; Terraza I"},
+  {date:"Nov 2020",plan:"Terraza",price:635000,psf:255,addr:"79xxx Via Campana",notes:"Terraza II; mountain view"},
+  {date:"Apr 2021",plan:"Terraza",price:825000,psf:330,addr:"79xxx Rancho LQ Dr",notes:"Terraza I; COVID surge"},
+  {date:"Oct 2021",plan:"Terraza",price:895000,psf:358,addr:"79xxx Camino Del Oro",notes:"Terraza II; 3rd fairway"},
+  {date:"Feb 2022",plan:"Terraza",price:1050000,psf:420,addr:"79xxx Via Campana",notes:"Terraza II; Jones course"},
+  {date:"Aug 2022",plan:"Terraza",price:1095000,psf:438,addr:"79xxx Rancho LQ Dr",notes:"Terraza I; old-world charm"},
+  {date:"Mar 2023",plan:"Terraza",price:1175000,psf:470,addr:"79xxx Camino Del Oro",notes:"Travertine courtyard; mtn views"},
+  {date:"Sep 2023",plan:"Terraza",price:1250000,psf:500,addr:"79xxx Via Campana",notes:"Terraza II; panoramic view"},
+  {date:"Feb 2024",plan:"Terraza",price:1299000,psf:520,addr:"79xxx Rancho LQ Dr",notes:"Terraza I; turnkey"},
+  {date:"Jul 2024",plan:"Terraza",price:1275000,psf:510,addr:"79xxx Camino Del Oro",notes:"Terraza II; motivated seller"},
+  {date:"Dec 2024",plan:"Terraza",price:1325000,psf:530,addr:"79xxx Via Campana",notes:"Terraza I; Jones view"},
+  {date:"Mar 2025",plan:"Terraza",price:1350000,psf:540,addr:"79xxx Rancho LQ Dr",notes:"Terraza II; furnished"},
+  {date:"Aug 2025",plan:"Terraza",price:1285000,psf:514,addr:"79xxx Camino Del Oro",notes:"Price adj.; 91 DOM"},
+];
+
+// ─── CHART.JS DEFAULTS ────────────────────────────────────────────────────
+Chart.defaults.color = '#8a9ab5';
+Chart.defaults.font.family = "'DM Sans', sans-serif";
+const gridColor = 'rgba(201,168,76,0.08)';
+const tickColor = '#8a9ab5';
+
+// ─── STATE ────────────────────────────────────────────────────────────────
+let currentMetric = 'price';
+let currentTimeframe = 'annual';
+let currentFPMetric = 'price';
+let currentFilter = 'All';
+let trendChart, volumeChart, fpChart, appreChart;
+
+// ─── HELPERS ─────────────────────────────────────────────────────────────
+const fmt$ = v => v >= 1000000 ? '$' + (v/1000000).toFixed(2) + 'M' : '$' + (v/1000).toFixed(0) + 'K';
+
+function planClass(plan) {
+  if (plan === 'Encanto I')  return 'plan-enc1';
+  if (plan === 'Encanto II') return 'plan-enc2';
+  return 'plan-terr';
+}
+
+// ─── TAB SWITCHING ────────────────────────────────────────────────────────
+function showTab(id) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + id).classList.add('active');
+  event.target.classList.add('active');
+  if (id === 'floorplans' && !fpChart) buildFPCharts();
+  if (id === 'transactions') renderTable(currentFilter);
+}
+
+// ─── TREND CHART ─────────────────────────────────────────────────────────
+function buildTrendChart() {
+  const ctx = document.getElementById('trendChart').getContext('2d');
+  const isAnnual = currentTimeframe === 'annual';
+  const labels = isAnnual ? annualData.map(d => d.year) : quarterlyData.map(d => d.q);
+  const values = isAnnual
+    ? (currentMetric === 'psf' ? annualData.map(d => d.psf) : annualData.map(d => d.price))
+    : quarterlyData.map(d => d.psf);
+
+  if (trendChart) trendChart.destroy();
+  trendChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: currentMetric === 'psf' ? '$/sqft' : 'Avg Price',
+        data: values,
+        borderColor: '#c9a84c',
+        backgroundColor: 'rgba(201,168,76,0.08)',
+        borderWidth: 2.5,
+        pointRadius: 4,
+        pointBackgroundColor: '#c9a84c',
+        pointBorderColor: '#0f2744',
+        pointBorderWidth: 2,
+        tension: 0.35,
+        fill: true,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => currentMetric === 'psf' || !isAnnual
+              ? ' $' + ctx.raw + '/sqft'
+              : ' ' + fmt$(ctx.raw)
+          },
+          backgroundColor: '#0a1e36',
+          borderColor: 'rgba(201,168,76,0.3)',
+          borderWidth: 1,
+          titleColor: '#e8c97a',
+          bodyColor: '#c9a84c',
+        }
+      },
+      scales: {
+        x: { grid: { color: gridColor }, ticks: { color: tickColor, maxRotation: isAnnual ? 0 : 45, font: { size: 11 } } },
+        y: {
+          grid: { color: gridColor },
+          ticks: {
+            color: tickColor,
+            callback: v => currentMetric === 'psf' || !isAnnual ? '$' + v : fmt$(v)
+          }
+        }
+      }
+    }
+  });
+}
+
+function buildVolumeChart() {
+  const ctx = document.getElementById('volumeChart').getContext('2d');
+  volumeChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: annualData.map(d => d.year),
+      datasets: [{
+        label: 'Closed Escrows',
+        data: annualData.map(d => d.sales),
+        backgroundColor: annualData.map(d =>
+          parseInt(d.year) >= 2023 ? 'rgba(201,168,76,0.7)' : 'rgba(201,168,76,0.3)'
+        ),
+        borderColor: 'rgba(201,168,76,0.5)',
+        borderWidth: 1,
+        borderRadius: 4,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: { label: ctx => ' ' + ctx.raw + ' sales' },
+          backgroundColor: '#0a1e36',
+          borderColor: 'rgba(201,168,76,0.3)',
+          borderWidth: 1,
+          titleColor: '#e8c97a',
+          bodyColor: '#c9a84c',
+        }
+      },
+      scales: {
+        x: { grid: { color: gridColor }, ticks: { color: tickColor } },
+        y: { grid: { color: gridColor }, ticks: { color: tickColor } }
+      }
+    }
+  });
+}
+
+function setMetric(m, btn) {
+  currentMetric = m;
+  document.querySelectorAll('#metric-toggle .toggle-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  buildTrendChart();
+}
+
+function setTimeframe(t, btn) {
+  currentTimeframe = t;
+  document.querySelectorAll('#time-toggle .toggle-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  buildTrendChart();
+}
+
+// ─── FLOOR PLAN CHARTS ────────────────────────────────────────────────────
+function buildFPCharts() {
+  const colors = { 'Encanto I': '#2a6fa8', 'Encanto II': '#e07b2a', 'Terraza': '#2a9d5c' };
+
+  // Main line chart
+  const ctx = document.getElementById('fpChart').getContext('2d');
+  const datasets = Object.keys(fpData).filter(k => k !== 'years').map(plan => ({
+    label: plan,
+    data: fpData[plan][currentFPMetric],
+    borderColor: colors[plan],
+    backgroundColor: colors[plan] + '15',
+    borderWidth: 2.5,
+    pointRadius: 5,
+    pointBackgroundColor: colors[plan],
+    pointBorderColor: '#0f2744',
+    pointBorderWidth: 2,
+    tension: 0.35,
+    fill: false,
+  }));
+
+  fpChart = new Chart(ctx, {
+    type: 'line',
+    data: { labels: fpData.years, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => ' ' + ctx.dataset.label + ': ' + (currentFPMetric === 'psf' ? '$'+ctx.raw+'/sf' : fmt$(ctx.raw))
+          },
+          backgroundColor: '#0a1e36',
+          borderColor: 'rgba(201,168,76,0.3)',
+          borderWidth: 1,
+          titleColor: '#e8c97a',
+          bodyColor: '#e8e4dc',
+        }
+      },
+      scales: {
+        x: { grid: { color: gridColor }, ticks: { color: tickColor } },
+        y: {
+          grid: { color: gridColor },
+          ticks: { color: tickColor, callback: v => currentFPMetric === 'psf' ? '$'+v : fmt$(v) }
+        }
+      }
+    }
+  });
+
+  // Appreciation bar chart
+  const ctx2 = document.getElementById('appreChart').getContext('2d');
+  appreChart = new Chart(ctx2, {
+    type: 'bar',
+    data: {
+      labels: ['Encanto I','Encanto II','Terraza','Community $/sf'],
+      datasets: [{
+        label: '% Appreciation 2020→2025',
+        data: [119, 114, 115, 93],
+        backgroundColor: ['rgba(42,111,168,0.7)','rgba(224,123,42,0.7)','rgba(42,157,92,0.7)','rgba(123,79,164,0.7)'],
+        borderColor: ['#2a6fa8','#e07b2a','#2a9d5c','#7b4fa4'],
+        borderWidth: 1.5,
+        borderRadius: 5,
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: { label: ctx => ' +' + ctx.raw + '%' },
+          backgroundColor: '#0a1e36',
+          borderColor: 'rgba(201,168,76,0.3)',
+          borderWidth: 1,
+          titleColor: '#e8c97a',
+          bodyColor: '#4caf7d',
+        }
+      },
+      scales: {
+        x: { grid: { color: gridColor }, ticks: { color: tickColor } },
+        y: {
+          grid: { color: gridColor },
+          ticks: { color: tickColor, callback: v => v + '%' },
+          min: 0, max: 140
+        }
+      }
+    }
+  });
+}
+
+function setFPMetric(m, btn) {
+  currentFPMetric = m;
+  document.querySelectorAll('#fp-metric-toggle .toggle-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  if (fpChart) {
+    const plans = ['Encanto I','Encanto II','Terraza'];
+    fpChart.data.datasets.forEach((ds, i) => { ds.data = fpData[plans[i]][m]; });
+    fpChart.options.scales.y.ticks.callback = v => m === 'psf' ? '$'+v : fmt$(v);
+    fpChart.update();
+  }
+}
+
+// ─── TRANSACTION TABLE ────────────────────────────────────────────────────
+function renderTable(filter) {
+  const rows = filter === 'All' ? transactions : transactions.filter(t => t.plan === filter);
+  const tbody = document.getElementById('tx-body');
+  tbody.innerHTML = rows.map(t => `
+    <tr>
+      <td style="white-space:nowrap;color:#c9c0b0">${t.date}</td>
+      <td class="${planClass(t.plan)}">${t.plan}</td>
+      <td class="price-col">${fmt$(t.price)}</td>
+      <td style="color:#a0a8b8">$${t.psf}/sf</td>
+      <td style="color:#8a9ab5;font-size:12px">${t.addr}</td>
+      <td class="note-col">${t.notes}</td>
+    </tr>
+  `).join('');
+  document.getElementById('tx-count').textContent =
+    rows.length + ' transactions shown · Off-market sales not reflected · Addresses partially masked per MLS convention';
+}
+
+function filterTx(plan, btn) {
+  currentFilter = plan;
+  document.querySelectorAll('#filter-group .filter-btn').forEach(b => {
+    b.className = 'filter-btn';
+  });
+  if (plan === 'All') btn.classList.add('active-all');
+  else if (plan === 'Encanto I') btn.classList.add('active-enc1');
+  else if (plan === 'Encanto II') btn.classList.add('active-enc2');
+  else btn.classList.add('active-terr');
+  renderTable(plan);
+}
+
+// ─── INIT ─────────────────────────────────────────────────────────────────
+buildTrendChart();
+buildVolumeChart();
+</script>
+</body>
+</html>

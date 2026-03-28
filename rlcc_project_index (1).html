@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>RLCC Home Search — Project Index</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --navy:  #0f2744;
+    --gold:  #c9a84c;
+    --gold2: #e8c97a;
+    --mid:   #8a9ab5;
+    --border: rgba(201,168,76,0.22);
+    --enc1:  #2a6fa8;
+    --enc2:  #e07b2a;
+    --terr:  #2a9d5c;
+  }
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--navy);
+    color: #e8e4dc;
+    min-height: 100vh;
+    padding: 0 0 60px;
+  }
+
+  /* HEADER */
+  header {
+    background: linear-gradient(135deg, #0a1e36, #162f52);
+    border-bottom: 1px solid var(--border);
+    padding: 32px 48px 24px;
+    position: relative;
+    overflow: hidden;
+  }
+  header::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 85% 50%, rgba(201,168,76,0.07), transparent 60%);
+    pointer-events: none;
+  }
+  .header-top { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px; }
+  header h1 { font-family: 'Playfair Display', serif; font-size: 26px; color: var(--gold2); }
+  header .subtitle { font-size: 12px; color: var(--mid); margin-top: 5px; letter-spacing: 0.06em; text-transform: uppercase; }
+  .status-badge {
+    background: rgba(42,157,92,0.15); border: 1px solid rgba(42,157,92,0.35);
+    color: #4caf7d; padding: 6px 14px; border-radius: 20px;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.05em; white-space: nowrap;
+  }
+  .header-meta {
+    display: flex; gap: 28px; margin-top: 20px; flex-wrap: wrap;
+  }
+  .meta-item { font-size: 12px; }
+  .meta-label { color: var(--mid); text-transform: uppercase; letter-spacing: 0.06em; font-size: 10px; margin-bottom: 3px; }
+  .meta-value { color: var(--gold2); font-weight: 500; }
+
+  /* MAIN */
+  .main { max-width: 1100px; margin: 0 auto; padding: 36px 48px; }
+
+  /* SECTION HEADERS */
+  .section-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 15px; color: var(--gold);
+    letter-spacing: 0.06em; text-transform: uppercase;
+    margin-bottom: 14px; padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .section-title::before {
+    content: '';
+    display: inline-block; width: 3px; height: 16px;
+    background: var(--gold); border-radius: 2px;
+  }
+
+  /* DECISION CRITERIA */
+  .criteria-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 32px; }
+  .criteria-card {
+    background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+    border-radius: 9px; padding: 16px 18px;
+  }
+  .criteria-card .c-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--mid); margin-bottom: 6px; }
+  .criteria-card .c-value { font-size: 14px; color: var(--gold2); font-weight: 600; line-height: 1.4; }
+  .criteria-card .c-note { font-size: 11px; color: var(--mid); margin-top: 4px; }
+
+  /* FLOOR PLAN SUMMARY */
+  .fp-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 32px; }
+  .fp-card {
+    background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+    border-radius: 9px; padding: 18px 20px;
+    border-top: 3px solid transparent;
+  }
+  .fp-card.enc1 { border-top-color: var(--enc1); }
+  .fp-card.enc2 { border-top-color: var(--enc2); }
+  .fp-card.terr { border-top-color: var(--terr); }
+  .fp-card .fp-name { font-family: 'Playfair Display', serif; font-size: 15px; margin-bottom: 10px; }
+  .fp-card.enc1 .fp-name { color: var(--enc1); }
+  .fp-card.enc2 .fp-name { color: var(--enc2); }
+  .fp-card.terr .fp-name { color: var(--terr); }
+  .fp-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.05); font-size: 12px; }
+  .fp-row:last-child { border-bottom: none; }
+  .fp-key { color: var(--mid); }
+  .fp-val { color: #e8e4dc; font-weight: 500; }
+  .fp-badge {
+    display: inline-block; margin-top: 10px;
+    padding: 3px 10px; border-radius: 10px;
+    font-size: 10px; font-weight: 600; letter-spacing: 0.05em;
+  }
+  .badge-primary { background: rgba(201,168,76,0.15); color: var(--gold); border: 1px solid rgba(201,168,76,0.3); }
+  .badge-alt     { background: rgba(138,154,181,0.12); color: var(--mid); border: 1px solid rgba(138,154,181,0.2); }
+
+  /* DOCUMENTS TABLE */
+  .doc-table { width: 100%; border-collapse: collapse; margin-bottom: 32px; }
+  .doc-table th {
+    font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em;
+    color: var(--gold); padding: 8px 14px; border-bottom: 1px solid var(--border);
+    text-align: left; font-weight: 600;
+  }
+  .doc-table td { padding: 12px 14px; border-bottom: 1px solid rgba(255,255,255,0.05); vertical-align: top; font-size: 13px; }
+  .doc-table tr:hover td { background: rgba(201,168,76,0.04); }
+  .doc-name { color: var(--gold2); font-weight: 600; }
+  .doc-file {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: rgba(42,111,168,0.15); border: 1px solid rgba(42,111,168,0.3);
+    color: #7ab8e8; padding: 2px 9px; border-radius: 4px;
+    font-size: 11px; font-family: monospace;
+    transition: background .15s, border-color .15s;
+  }
+  a:hover .doc-file {
+    background: rgba(42,111,168,0.30); border-color: rgba(42,111,168,0.6);
+  }
+  .doc-desc { color: #a0a8b8; font-size: 12px; margin-top: 3px; line-height: 1.5; }
+  .doc-status { font-size: 11px; }
+  .status-done { color: #4caf7d; }
+  .status-next { color: var(--gold); }
+
+  /* KEY FINDINGS */
+  .findings-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 32px; }
+  .finding {
+    background: rgba(255,255,255,0.04); border: 1px solid var(--border);
+    border-radius: 9px; padding: 16px 18px;
+    display: flex; gap: 12px;
+  }
+  .finding-icon { font-size: 18px; flex-shrink: 0; margin-top: 1px; }
+  .finding h4 { font-size: 13px; color: var(--gold2); font-weight: 600; margin-bottom: 3px; }
+  .finding p { font-size: 12px; color: #a0a8b8; line-height: 1.55; }
+
+  /* DATA GAPS */
+  .gap-list { list-style: none; margin-bottom: 32px; }
+  .gap-list li {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.05);
+    font-size: 13px; color: #a0a8b8; line-height: 1.5;
+  }
+  .gap-list li:last-child { border-bottom: none; }
+  .gap-icon { font-size: 14px; flex-shrink: 0; margin-top: 1px; }
+
+  /* NEXT STEPS */
+  .steps-list { list-style: none; margin-bottom: 32px; }
+  .steps-list li {
+    display: flex; gap: 14px; padding: 12px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .steps-list li:last-child { border-bottom: none; }
+  .step-num {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--gold); color: var(--navy);
+    font-size: 11px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; margin-top: 1px;
+  }
+  .step-body h4 { font-size: 13px; color: var(--gold2); font-weight: 600; margin-bottom: 3px; }
+  .step-body p { font-size: 12px; color: #a0a8b8; line-height: 1.55; }
+
+  /* HOW TO SAVE */
+  .save-box {
+    background: rgba(42,100,150,0.12); border: 1px solid rgba(42,100,150,0.35);
+    border-radius: 10px; padding: 20px 24px; margin-bottom: 32px;
+  }
+  .save-box h3 { font-size: 14px; color: #7ab8e8; margin-bottom: 12px; }
+  .save-step { display: flex; gap: 10px; margin-bottom: 10px; font-size: 13px; color: #a0a8b8; line-height: 1.5; }
+  .save-step:last-child { margin-bottom: 0; }
+  .save-num {
+    width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0;
+    background: rgba(122,184,232,0.2); color: #7ab8e8;
+    font-size: 10px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center; margin-top: 1px;
+  }
+  code {
+    background: rgba(255,255,255,0.08); padding: 1px 6px; border-radius: 3px;
+    font-size: 12px; color: var(--gold2); font-family: monospace;
+  }
+
+  /* CLAUDE NOTE */
+  .claude-note {
+    background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+    border-radius: 9px; padding: 16px 20px; margin-bottom: 32px;
+    font-size: 12px; color: #a0a8b8; line-height: 1.6;
+  }
+  .claude-note strong { color: var(--gold2); }
+
+  .disclaimer { text-align: center; font-size: 10px; color: rgba(138,154,181,0.5); line-height: 1.7; }
+
+  @media (max-width: 800px) {
+    header, .main { padding-left: 20px; padding-right: 20px; }
+    .criteria-grid, .fp-grid, .findings-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <div>
+      <h1>RLCC Home Search — Project Index</h1>
+      <div class="subtitle">Rancho La Quinta Country Club &nbsp;·&nbsp; La Quinta, CA 92253 &nbsp;·&nbsp; 1031 Exchange Research</div>
+    </div>
+    <div class="status-badge">● Active Research</div>
+  </div>
+  <div class="header-meta">
+    <div class="meta-item"><div class="meta-label">Last Updated</div><div class="meta-value">March 27, 2026</div></div>
+    <div class="meta-item"><div class="meta-label">Primary Target</div><div class="meta-value">Encanto I (2,635 sqft)</div></div>
+    <div class="meta-item"><div class="meta-label">Alt. Targets</div><div class="meta-value">Encanto II · Terraza I/II</div></div>
+    <div class="meta-item"><div class="meta-label">Price Range</div><div class="meta-value">~$1.2M – $1.75M</div></div>
+    <div class="meta-item"><div class="meta-label">Transaction Type</div><div class="meta-value">1031 Exchange</div></div>
+    <div class="meta-item"><div class="meta-label">Data Source</div><div class="meta-value">MLS · Redfin · Ron Roisum (on-site)</div></div>
+  </div>
+</header>
+
+<div class="main">
+
+  <!-- SEARCH CRITERIA -->
+  <div class="section-title">Confirmed Search Criteria</div>
+  <div class="criteria-grid" style="margin-bottom:32px">
+    <div class="criteria-card">
+      <div class="c-label">Property Type</div>
+      <div class="c-value">Single-Family Home</div>
+      <div class="c-note">Within RLCC master association</div>
+    </div>
+    <div class="criteria-card">
+      <div class="c-label">Size Range</div>
+      <div class="c-value">~2,400 – 3,000 sqft</div>
+      <div class="c-note">3 BR / 3–3.5 BA target</div>
+    </div>
+    <div class="criteria-card">
+      <div class="c-label">Floor Plans</div>
+      <div class="c-value">Encanto I · Encanto II · Terraza I/II</div>
+      <div class="c-note">Keeping 3 open for 1031 flexibility</div>
+    </div>
+    <div class="criteria-card">
+      <div class="c-label">Pool / Hot Tub</div>
+      <div class="c-value">Not a filter</div>
+      <div class="c-note">~Most homes have pools; verify per listing</div>
+    </div>
+    <div class="criteria-card">
+      <div class="c-label">Price Expectation</div>
+      <div class="c-value">$1.2M – $1.75M</div>
+      <div class="c-note">Based on 2025 MLS avg by floor plan</div>
+    </div>
+    <div class="criteria-card">
+      <div class="c-label">Transaction Structure</div>
+      <div class="c-value">1031 Exchange</div>
+      <div class="c-note">45-day ID / 180-day close rules apply</div>
+    </div>
+  </div>
+
+  <!-- FLOOR PLAN SUMMARY -->
+  <div class="section-title">Target Floor Plans at a Glance</div>
+  <div class="fp-grid" style="margin-bottom:32px">
+    <div class="fp-card enc1">
+      <div class="fp-name">Encanto I</div>
+      <div class="fp-row"><span class="fp-key">Square Feet</span><span class="fp-val">2,635</span></div>
+      <div class="fp-row"><span class="fp-key">Beds / Baths</span><span class="fp-val">3 BR / 3.5 BA</span></div>
+      <div class="fp-row"><span class="fp-key">2025 Avg Price</span><span class="fp-val">$1,524,643</span></div>
+      <div class="fp-row"><span class="fp-key">2025 $/sqft</span><span class="fp-val">$573</span></div>
+      <div class="fp-row"><span class="fp-key">2025 Sales</span><span class="fp-val">6 closed</span></div>
+      <div class="fp-row"><span class="fp-key">Location</span><span class="fp-val">Jones 14th/15th fairways</span></div>
+      <div class="fp-row"><span class="fp-key">5-yr Appreciation</span><span class="fp-val">+119% (2020→2025)</span></div>
+      <span class="fp-badge badge-primary">⭐ Primary Target</span>
+    </div>
+    <div class="fp-card enc2">
+      <div class="fp-name">Encanto II</div>
+      <div class="fp-row"><span class="fp-key">Square Feet</span><span class="fp-val">2,924</span></div>
+      <div class="fp-row"><span class="fp-key">Beds / Baths</span><span class="fp-val">3–4 BR / 3.5 BA</span></div>
+      <div class="fp-row"><span class="fp-key">2025 Avg Price</span><span class="fp-val">$1,707,690</span></div>
+      <div class="fp-row"><span class="fp-key">2025 $/sqft</span><span class="fp-val">$576</span></div>
+      <div class="fp-row"><span class="fp-key">2025 Sales</span><span class="fp-val">9 closed (highest vol.)</span></div>
+      <div class="fp-row"><span class="fp-key">Notes</span><span class="fp-val">Often incl. detached casita</span></div>
+      <div class="fp-row"><span class="fp-key">5-yr Appreciation</span><span class="fp-val">+114% (2020→2025)</span></div>
+      <span class="fp-badge badge-alt">Alternate</span>
+    </div>
+    <div class="fp-card terr">
+      <div class="fp-name">Terraza I / II</div>
+      <div class="fp-row"><span class="fp-key">Square Feet</span><span class="fp-val">2,403 / 2,648</span></div>
+      <div class="fp-row"><span class="fp-key">Beds / Baths</span><span class="fp-val">3 BR / 3–3.5 BA</span></div>
+      <div class="fp-row"><span class="fp-key">2025 Avg Price</span><span class="fp-val">~$1.2M – $1.4M</span></div>
+      <div class="fp-row"><span class="fp-key">2025 $/sqft</span><span class="fp-val">~$499 – $529</span></div>
+      <div class="fp-row"><span class="fp-key">2025 Sales</span><span class="fp-val">7 combined</span></div>
+      <div class="fp-row"><span class="fp-key">Notes</span><span class="fp-val">Most affordable; mtn views</span></div>
+      <div class="fp-row"><span class="fp-key">5-yr Appreciation</span><span class="fp-val">+115% (2020→2025)</span></div>
+      <span class="fp-badge badge-alt">Alternate</span>
+    </div>
+  </div>
+
+  <!-- DOCUMENTS -->
+  <div class="section-title">Research Files — Complete Project Library</div>
+  <table class="doc-table" style="margin-bottom:32px">
+    <thead>
+      <tr><th>#</th><th>Document</th><th>File</th><th>Contents</th><th>Status</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td style="color:var(--gold);font-weight:700;font-size:15px">1</td>
+        <td>
+          <div class="doc-name">Interactive Sales Dashboard</div>
+          <div class="doc-desc">Core analysis tool with 5 tabs: 10-year price trends (annual + quarterly), floor plan comparison, individual transaction log (2015–2025), 1031 exchange summary, and a Market Dynamics overview tab linking to File 3.</div>
+        </td>
+        <td><a href="rlcc_dashboard.html" target="_blank"><span class="doc-file">📊 rlcc_dashboard.html</span></a></td>
+        <td style="color:#a0a8b8;font-size:12px">Charts · ~45 transactions · 1031 guidance · Floor plan specs · Links to companion files</td>
+        <td class="doc-status status-done">✓ Complete</td>
+      </tr>
+      <tr>
+        <td style="color:var(--gold);font-weight:700;font-size:15px">2</td>
+        <td>
+          <div class="doc-name">Project Index (this page)</div>
+          <div class="doc-desc">Master reference document. Search criteria, floor plan specs, all key findings, data gaps, next steps, and complete file library. Re-download after each session update.</div>
+        </td>
+        <td><a href="rlcc_project_index.html" target="_blank"><span class="doc-file">📋 rlcc_project_index.html</span></a></td>
+        <td style="color:#a0a8b8;font-size:12px">Criteria · Floor plans · Findings · Gaps · Steps · File registry</td>
+        <td class="doc-status status-done">✓ Updated Mar 27</td>
+      </tr>
+      <tr>
+        <td style="color:var(--gold);font-weight:700;font-size:15px">3</td>
+        <td>
+          <div class="doc-name">Market Dynamics Analysis</div>
+          <div class="doc-desc">7-tab deep dive into market behavior 2018–2025: days on market, list vs. sale price ratios, inventory & absorption, seasonal patterns, bedroom-level slicing, and a 60+ transaction listing detail log filterable by floor plan and BR count.</div>
+        </td>
+        <td><a href="rlcc_market_dynamics.html" target="_blank"><span class="doc-file">📉 rlcc_market_dynamics.html</span></a></td>
+        <td style="color:#a0a8b8;font-size:12px">DOM · S/L ratios · Inventory · Seasonal · BR slicing · 60+ listings · 2018–2025</td>
+        <td class="doc-status status-done">✓ Complete</td>
+      </tr>
+      <tr>
+        <td style="color:var(--gold);font-weight:700;font-size:15px">4</td>
+        <td>
+          <div class="doc-name">Recession &amp; Downturn Analysis</div>
+          <div class="doc-desc">30-year historical analysis across 6 tabs: full price history for La Quinta, Palm Desert, Rancho Mirage, and Indian Wells; anatomy of all four downturns including GFC deep dive; luxury vs. broad market divergence; 3BR vs. 4BR behavior (2012–2026); current market signals; and RLCC-specific implications and scenario analysis.</div>
+        </td>
+        <td><a href="rlcc_recession_analysis.html" target="_blank"><span class="doc-file">📉 rlcc_recession_analysis.html</span></a></td>
+        <td style="color:#a0a8b8;font-size:12px">30-yr history · GFC anatomy · Luxury divergence · BR tiers · Scenario table · 1995–2026</td>
+        <td class="doc-status status-done">✓ Complete</td>
+      </tr>
+      <tr style="opacity:0.6">
+        <td style="color:var(--mid);font-weight:700;font-size:13px">—</td>
+        <td>
+          <div class="doc-name" style="color:var(--mid)">React Dashboard (superseded)</div>
+          <div class="doc-desc">Original in-app React version. Superseded by rlcc_dashboard.html. Requires compilation to run standalone.</div>
+        </td>
+        <td><span class="doc-file" style="opacity:0.6">⚛️ rlcc_dashboard.jsx</span></td>
+        <td style="color:#a0a8b8;font-size:12px">Same data as File 1 · React/Recharts only</td>
+        <td class="doc-status" style="color:var(--mid)">↳ Superseded</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- HOW FILES WORK TOGETHER -->
+  <div class="section-title">How the Files Work Together</div>
+  <div style="background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:10px;padding:18px 22px;margin-bottom:32px">
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:14px">
+      <a href="rlcc_project_index.html" target="_blank" style="text-decoration:none">
+      <div style="text-align:center;padding:12px;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid var(--border);transition:border-color .2s" onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='var(--border)'">
+        <div style="font-size:24px;margin-bottom:6px">📋</div>
+        <div style="font-size:12px;font-weight:600;color:var(--gold2);margin-bottom:4px">Start here</div>
+        <div style="font-size:11px;color:var(--mid)">rlcc_project_index.html<br>Master reference &amp; file guide</div>
+      </div></a>
+      <a href="rlcc_dashboard.html" target="_blank" style="text-decoration:none">
+      <div style="text-align:center;padding:12px;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid var(--border);transition:border-color .2s" onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='var(--border)'">
+        <div style="font-size:24px;margin-bottom:6px">📊</div>
+        <div style="font-size:12px;font-weight:600;color:var(--gold2);margin-bottom:4px">Price & floor plan research</div>
+        <div style="font-size:11px;color:var(--mid)">rlcc_dashboard.html<br>10-yr trends · Transactions · 1031</div>
+      </div></a>
+      <a href="rlcc_market_dynamics.html" target="_blank" style="text-decoration:none">
+      <div style="text-align:center;padding:12px;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid var(--border);transition:border-color .2s" onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='var(--border)'">
+        <div style="font-size:24px;margin-bottom:6px">📉</div>
+        <div style="font-size:12px;font-weight:600;color:var(--gold2);margin-bottom:4px">Market behavior</div>
+        <div style="font-size:11px;color:var(--mid)">rlcc_market_dynamics.html<br>DOM · S/L ratios · Seasonal · BR</div>
+      </div></a>
+      <a href="rlcc_recession_analysis.html" target="_blank" style="text-decoration:none">
+      <div style="text-align:center;padding:12px;background:rgba(255,255,255,0.04);border-radius:8px;border:1px solid var(--border);transition:border-color .2s" onmouseover="this.style.borderColor='var(--gold)'" onmouseout="this.style.borderColor='var(--border)'">
+        <div style="font-size:24px;margin-bottom:6px">🏦</div>
+        <div style="font-size:12px;font-weight:600;color:var(--gold2);margin-bottom:4px">Long-term risk context</div>
+        <div style="font-size:11px;color:var(--mid)">rlcc_recession_analysis.html<br>30-yr history · Downturns · Scenarios</div>
+      </div></a>
+    </div>
+  </div>
+
+  <!-- KEY FINDINGS -->
+  <div class="section-title">Key Research Findings — All Sessions</div>
+  <div class="findings-grid" style="margin-bottom:32px">
+    <div class="finding">
+      <div class="finding-icon">📈</div>
+      <div>
+        <h4>COVID doubled prices — and they've held at the luxury tier</h4>
+        <p>All three target floor plans roughly doubled from 2020 to 2022. The broader La Quinta market has since corrected 13% from peak, but RLCC-tier homes ($1.4–1.6M) are holding near prior highs, consistent with historical luxury divergence patterns.</p>
+      </div>
+    </div>
+    <div class="finding">
+      <div class="finding-icon">🏆</div>
+      <div>
+        <h4>Encanto I is the sweet spot</h4>
+        <p>Most-transacted model in your size range, purpose-built as 3BR/3.5BA with ensuite baths, on the Jones course fairways. At $573/sf the value case is stronger than Encanto II at a similar per-sqft price.</p>
+      </div>
+    </div>
+    <div class="finding">
+      <div class="finding-icon">⚡</div>
+      <div>
+        <h4>Inventory is thin — 1–2 Encanto I sales/month</h4>
+        <p>The community does ~50–62 total closings/year. Your 3 target models combined account for ~22 of those. Having all 3 open is essential for 1031 execution within the 45-day window.</p>
+      </div>
+    </div>
+    <div class="finding">
+      <div class="finding-icon">🏌️</div>
+      <div>
+        <h4>Off-market deals are real here (~15–20%)</h4>
+        <p>Ron Roisum's on-site office at RLCC sees transactions that never hit the public MLS. For a 1031 with a hard deadline, having an on-site agent is not optional — it's strategic.</p>
+      </div>
+    </div>
+    <div class="finding">
+      <div class="finding-icon">🗓️</div>
+      <div>
+        <h4>May–June is the optimal 1031 timing window</h4>
+        <p>Peak season (Jan–Mar) offers only 1–2% negotiating room with high buyer competition. May–June gives you 3–4% discount room, motivated sellers, and decent inventory — without the thin summer pickings of July–September.</p>
+      </div>
+    </div>
+    <div class="finding">
+      <div class="finding-icon">🏦</div>
+      <div>
+        <h4>GFC took 13–16 years to fully recover</h4>
+        <p>The Valley's deepest downturn dropped the broad median 52% peak-to-trough. Luxury golf community homes fell ~35–40% — better, but still severe. Recovery to prior peak prices took 13–16 years. The current correction (~15.7% from peak) shows none of the structural conditions that caused the GFC cascade.</p>
+      </div>
+    </div>
+    <div class="finding">
+      <div class="finding-icon">📊</div>
+      <div>
+        <h4>Luxury tier vs. broad market divergence is historically unprecedented</h4>
+        <p>Indian Wells detached homes are 12.1% above their 2022 peak while Palm Springs is down 23.7% — a 35+ point spread never seen before. RLCC-tier pricing ($1.4–1.6M) is tracking with the luxury market, not the broad La Quinta correction.</p>
+      </div>
+    </div>
+    <div class="finding">
+      <div class="finding-icon">💡</div>
+      <div>
+        <h4>Price tier matters more than bedroom count for resilience</h4>
+        <p>A 3BR home at $1.5M in RLCC behaves like Indian Wells luxury in downturns — not like a typical 3BR La Quinta home. Below $1M 3BR homes corrected 13–20% from 2022. Above $1.4M they've held. Bedroom count is secondary to price tier.</p>
+      </div>
+    </div>
+    <div class="finding">
+      <div class="finding-icon">💰</div>
+      <div>
+        <h4>Value anchor: $1.45M–$1.60M for Encanto I</h4>
+        <p>At $573/sf average, a clean Encanto I should trade in this range. Below $1.40M likely signals deferred maintenance, limited view, or a motivated seller — worth understanding why before moving fast.</p>
+      </div>
+    </div>
+    <div class="finding">
+      <div class="finding-icon">📅</div>
+      <div>
+        <h4>Feb 2026 median was up 25.6% YoY</h4>
+        <p>Redfin reported a $1.5M median for Rancho La Quinta in February 2026, up sharply year-over-year. Peak season (Jan–Mar) drives Q1 prices higher — timing your search to this window has tradeoffs.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- DATA GAPS -->
+  <div class="section-title">Known Data Gaps — Fill With Agent</div>
+  <ul class="gap-list" style="margin-bottom:32px">
+    <li>
+      <span class="gap-icon">⚠️</span>
+      <span><strong style="color:var(--gold2)">Pre-2023 floor plan breakdowns are estimated,</strong> not MLS-verified. Ron Roisum's office can pull actual historical comps by floor plan going back further — critical for establishing your 1031 replacement value basis.</span>
+    </li>
+    <li>
+      <span class="gap-icon">⚠️</span>
+      <span><strong style="color:var(--gold2)">2026 individual sale records</strong> are not yet in public search results (MLS lag of 2–4 weeks). Redfin confirms 16 sales in February 2026 at a median of $1.5M, up 25.6% YoY — but floor-plan-level detail requires Ron Roisum or direct Redfin/Riverside County Assessor lookup.</span>
+    </li>
+    <li>
+      <span class="gap-icon">⚠️</span>
+      <span><strong style="color:var(--gold2)">Specific lot/view premiums</strong> are not captured. Golf course view, lake view, elevated lot, and cul-de-sac all command meaningful premiums within the same floor plan — not yet quantified in the analysis.</span>
+    </li>
+    <li>
+      <span class="gap-icon">⚠️</span>
+      <span><strong style="color:var(--gold2)">Golf membership availability and current cost</strong> not confirmed. Previously ~$105K initiation + ~$1,190/mo golf dues (695-member cap). Verify directly with RLCC before budgeting.</span>
+    </li>
+    <li>
+      <span class="gap-icon">⚠️</span>
+      <span><strong style="color:var(--gold2)">Terraza I vs. Terraza II split</strong> in transaction data is estimated. MLS often groups them. Ron Roisum can separate if Terraza II becomes a serious contender.</span>
+    </li>
+    <li>
+      <span class="gap-icon">⚠️</span>
+      <span><strong style="color:var(--gold2)">Furnished vs. unfurnished price premium</strong> not quantified. We know ~59% of RLCC sales are furnished. Whether furnishing adds 3–5% to sale price or merely reduces DOM has not been verified from the data.</span>
+    </li>
+  </ul>
+
+  <!-- NEXT STEPS -->
+  <div class="section-title">Recommended Next Steps</div>
+  <ul class="steps-list" style="margin-bottom:32px">
+    <li>
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h4>Contact Ron Roisum — on-site at RLCC</h4>
+        <p>Cell: 760-567-2511 · Email: RRoisum@aol.com · Office: 79-295 Rancho La Quinta Drive. Request: (a) verified historical comps by floor plan, (b) any off-market or coming-soon listings, (c) confirmed 2026 closed sales to date, (d) current golf membership availability and cost.</p>
+      </div>
+    </li>
+    <li>
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h4>Set MLS alerts for all 3 floor plans NOW</h4>
+        <p>Ask Ron (or your own agent) to set automatic alerts the moment any Encanto I, Encanto II, or Terraza lists. With 1–2 Encanto I sales/month, days matter for your 1031 window.</p>
+      </div>
+    </li>
+    <li>
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h4>Tour RLCC before your 1031 clock starts</h4>
+        <p>Walk the community. Identify preferred streets, lot positions, and course views. Know in advance whether you want Jones or Pate course exposure, elevated vs. flat, north vs. south-facing. This lets you make fast, confident offers.</p>
+      </div>
+    </li>
+    <li>
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <h4>Confirm your Qualified Intermediary (QI) is ready</h4>
+        <p>Your QI must be designated before you close the relinquished property. If you don't have one, that's the most time-sensitive gap. Also explore reverse 1031 if timing is uncertain — you can acquire RLCC first, then sell the relinquished property within 180 days.</p>
+      </div>
+    </li>
+    <li>
+      <div class="step-num">5</div>
+      <div class="step-body">
+        <h4>Anchor your value expectations before negotiating</h4>
+        <p>At $573/sf, an Encanto I should run $1.45M–$1.60M. Current market data supports ~3–4% negotiating room from list. Anything under $1.4M likely has a view tradeoff, deferred maintenance, or a motivated seller — understand why before moving fast.</p>
+      </div>
+    </li>
+    <li>
+      <div class="step-num">6</div>
+      <div class="step-body">
+        <h4>Watch the macro signals in the recession file</h4>
+        <p>Rancho Mirage inventory is at 6.9 months of supply — the highest in the Valley. La Quinta attached homes are down 20.4% from peak. Neither is alarming yet, but both are worth monitoring over the next 60–90 days before you commit.</p>
+      </div>
+    </li>
+    <li>
+      <div class="step-num">7</div>
+      <div class="step-body">
+        <h4>Return to this Claude Project for next session</h4>
+        <p>This full conversation is saved in your Claude Project. Upload fresh comps from Ron, new listing data, or any agent reports and we can extend the analysis — add 2026 transactions, build a property comparison tool, or model specific offers.</p>
+      </div>
+    </li>
+  </ul>
+
+  <!-- HOW TO SAVE -->
+  <div class="section-title">Your Local Project Folder</div>
+  <div class="save-box">
+    <h3>📁 Save all 4 files to your RLCC Home Search folder</h3>
+    <div class="save-step"><div class="save-num">1</div><span>Keep all files in the same folder: <code>RLCC Home Search</code> on Desktop or Documents. <strong style="color:#7ab8e8">The links in this index only work when all 4 files are in the same folder.</strong></span></div>
+    <div class="save-step"><div class="save-num">2</div><span>Current files: <code>rlcc_project_index.html</code> &nbsp;·&nbsp; <code>rlcc_dashboard.html</code> &nbsp;·&nbsp; <code>rlcc_market_dynamics.html</code> &nbsp;·&nbsp; <code>rlcc_recession_analysis.html</code></span></div>
+    <div class="save-step"><div class="save-num">3</div><span>Double-click any file to open in your browser. No installation needed. Internet required only for fonts on first load.</span></div>
+    <div class="save-step"><div class="save-num">4</div><span><strong style="color:#7ab8e8">Optional:</strong> Upload the folder to Google Drive or Dropbox for cloud access and backup.</span></div>
+    <div class="save-step"><div class="save-num">5</div><span><strong style="color:#7ab8e8">Future sessions:</strong> Return to this Claude Project and upload new data (comps, listings, agent reports). We'll extend the analysis from where we left off. Re-download the updated index after each session.</span></div>
+  </div>
+
+  <!-- CLAUDE SESSION NOTE -->
+  <div class="claude-note">
+    <strong>About this Research Project:</strong> Built across multiple sessions in Claude on March 26–27, 2026. Data sources: CDAR/GPSR Desert Housing Reports, Redfin public records, MLS-linked listings, Ron Roisum on-site RLCC data, CVEP market data, Palm Springs Life retrospectives, and archived MLS aggregates. Pre-2023 floor plan data is estimated; pre-2005 historical data uses confirmed peak/trough anchors with interpolated intermediate values. All figures should be verified with a licensed agent and qualified intermediary before making purchase or exchange decisions. Not financial, tax, or legal advice.
+  </div>
+
+  <p class="disclaimer">
+    Rancho La Quinta Country Club · La Quinta, CA 92253 · Research compiled March 26, 2026<br>
+    Data sources: CRMLS/MLS, Redfin public records, Ron Roisum RLCC on-site office, Homes.com, archived listings<br>
+    Not a substitute for professional real estate, tax, or legal advice.
+  </p>
+
+</div>
+</body>
+</html>
